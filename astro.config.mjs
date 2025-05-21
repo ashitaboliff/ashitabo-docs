@@ -1,13 +1,18 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import react from '@astrojs/react';
+import tailwindcssVite from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+	vite: {
+		plugins: [tailwindcssVite()],
+	},
 	integrations: [
 		starlight({
-			title: 'My Docs',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+			title: 'あしたぼコマ表開発ドキュメント',
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/ashitabo' }],
 			sidebar: [
 				{
 					label: 'はじめに',
@@ -38,5 +43,6 @@ export default defineConfig({
 				},
 			],
 		}),
+		react(),
 	],
 });

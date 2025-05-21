@@ -1,0 +1,60 @@
+---
+title: Code Preview Tabs Demo
+description: Demonstrating the CodePreviewTabs component with HTML and TSX examples.
+# layout: '@/layouts/MainLayout.astro'
+---
+
+import CodePreviewTabs from '@/components/CodePreviewTabs.tsx';
+
+# Code Preview Tabs Component Demo
+
+This page demonstrates the functionality of the `CodePreviewTabs` component.
+
+## HTML Example
+
+Below is a preview of an HTML file located at `public/components-demo/sample.html`.
+The component should display the content between `<!-- start -->` and `<!-- end -->` comments,
+ignore content between `<!-- ignoreStart -->` and `<!-- ignoreEnd -->`,
+and not render the line following `<!-- // ignore render -->` in the preview tab.
+
+<CodePreviewTabs filePath="public/components-demo/sample.html" client:visible />
+
+## TSX React Component Example
+
+Below is a preview of a React TSX component located at `src/components/demo/SampleButton.tsx`.
+Similar rules for `// start`, `// end`, `// ignoreStart`, `// ignoreEnd`, and `// ignore render` apply to the code display.
+The preview tab should dynamically render the React component.
+
+<CodePreviewTabs filePath="src/components/demo/SampleButton.tsx" client:visible />
+
+## Non-Existent File Example
+
+This will demonstrate the error handling for a file that does not exist.
+
+<CodePreviewTabs filePath="src/components/demo/NonExistent.tsx" client:visible />
+
+## JS File Example (Preview Not Available)
+
+This will demonstrate a JS file where only the code view should be available.
+First, let's create a dummy JS file.
+
+```js title="public/components-demo/sample.js"
+// start
+function greet(name) {
+  // ignoreStart
+  // This is an internal comment for the JS file.
+  // ignoreEnd
+  console.log(`Hello, ${name}!`);
+  // // ignore render 
+  // This line is for testing the parser, but JS files don't render visually.
+  return `Hello, ${name}!`;
+}
+
+greet("World");
+// end
+
+// This is outside the scope.
+```
+*(The above JS code block is just for illustration; the component will fetch `public/components-demo/sample.js`)*
+
+<CodePreviewTabs filePath="public/components-demo/sample.js" client:visible />

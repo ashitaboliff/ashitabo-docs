@@ -2,8 +2,6 @@
 title: Docker を使った Web 開発のためのドキュメント
 ---
 
-import { Code } from '@astrojs/starlight/components';
-
 ## はじめに
 
 このドキュメントでは、Docker を利用したあしたぼコマ表の開発環境構築と、基本的な操作方法について説明します。

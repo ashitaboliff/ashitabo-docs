@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample HTML</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f0f0f0; }
+        .container { background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <!-- start -->
+    <div class="container">
+        <h1>Hello from Sample HTML!</h1>
+        <p>This is a paragraph inside the container.</p>
+        <!-- ignoreStart -->
+        <p>This part will be ignored in both code and preview.</p>
+        <!-- ignoreEnd -->
+        <button onclick="alert('Button clicked!')">Click Me</button>
+        <!-- // ignore render -->
+        <p>This line will appear in the code view, but not in the rendered preview.</p>
+    </div>
+    <!-- end -->
+
+    <p>This content is outside the start/end block and won't be shown.</p>
+</body>
+</html>

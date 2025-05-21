@@ -1,0 +1,35 @@
+---
+// src/layouts/MainLayout.astro
+const { frontmatter = {} } = Astro.props;
+const title = frontmatter.title || 'Astro Page';
+const description = frontmatter.description || 'An Astro page';
+---
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <meta name="description" content={description}>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- DaisyUI and Tailwind are assumed to be set up globally, e.g., in astro.config.mjs and globals.css -->
+    <style is:global>
+        @import '../globals.css'; /* Ensure global styles including Tailwind/DaisyUI are loaded */
+    </style>
+</head>
+<body class="bg-base-300 min-h-screen">
+    <header class="bg-base-100 shadow-md p-4 mb-8">
+        <div class="container mx-auto">
+            <h1 class="text-2xl font-bold">{title}</h1>
+        </div>
+    </header>
+    <main class="container mx-auto p-4">
+        <article class="prose lg:prose-xl bg-base-100 p-6 rounded-box shadow-xl">
+            <slot /> <!-- Page content will be injected here -->
+        </article>
+    </main>
+    <footer class="text-center p-4 mt-8 text-base-content text-opacity-60">
+        <p>&copy; {new Date().getFullYear()} Demo Site</p>
+    </footer>
+</body>
+</html>
