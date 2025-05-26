@@ -4,7 +4,7 @@ description: Demonstrating the CodePreviewTabs component with HTML and TSX examp
 # layout: '@/layouts/MainLayout.astro'
 ---
 
-import CodePreviewTabs from '@/components/CodePreviewTabs.tsx';
+import CodePreviewTabs from '@/components/CodePreviewTabs.astro';
 
 # Code Preview Tabs Component Demo
 
@@ -17,7 +17,7 @@ The component should display the content between `<!-- start -->` and `<!-- end 
 ignore content between `<!-- ignoreStart -->` and `<!-- ignoreEnd -->`,
 and not render the line following `<!-- // ignore render -->` in the preview tab.
 
-<CodePreviewTabs filePath="public/components-demo/sample.html" client:visible />
+<CodePreviewTabs filePath="public/components-demo/sample.html" />
 
 ## TSX React Component Example
 
@@ -25,13 +25,13 @@ Below is a preview of a React TSX component located at `src/components/demo/Samp
 Similar rules for `// start`, `// end`, `// ignoreStart`, `// ignoreEnd`, and `// ignore render` apply to the code display.
 The preview tab should dynamically render the React component.
 
-<CodePreviewTabs filePath="src/components/demo/SampleButton.tsx" client:visible />
+<CodePreviewTabs filePath="src/components/demo/SampleButton.tsx" />
 
 ## Non-Existent File Example
 
 This will demonstrate the error handling for a file that does not exist.
 
-<CodePreviewTabs filePath="src/components/demo/NonExistent.tsx" client:visible />
+<CodePreviewTabs filePath="src/components/demo/NonExistent.tsx" />
 
 ## JS File Example (Preview Not Available)
 
@@ -57,4 +57,4 @@ greet("World");
 ```
 *(The above JS code block is just for illustration; the component will fetch `public/components-demo/sample.js`)*
 
-<CodePreviewTabs filePath="public/components-demo/sample.js" client:visible />
+<CodePreviewTabs filePath="public/components-demo/sample.js" />

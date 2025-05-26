@@ -42,6 +42,9 @@ export default defineConfig({
 					autogenerate: { directory: 'reference' },
 				},
 			],
+			customCss: [
+				'./src/assets/app.css',
+			]
 		}),
 		react(),
 	],

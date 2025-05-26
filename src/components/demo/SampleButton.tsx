@@ -1,8 +1,8 @@
 // start
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-const SampleButton: React.FC = () => {
-  const [count, setCount] = useState(0);
+const SampleButton = () => {
+  const [count, setCount] = useState<number>(0);
 
   // ignoreStart
   // This is an internal comment, should not be displayed.
@@ -22,7 +22,7 @@ const SampleButton: React.FC = () => {
   return (
     <button 
       onClick={handleClick} 
-      className="btn btn-primary"
+      className="tw:btn tw:btn-primary"
       style={{ margin: '10px', padding: '10px 20px', fontSize: '16px' }}
     >
       Click count: {count}

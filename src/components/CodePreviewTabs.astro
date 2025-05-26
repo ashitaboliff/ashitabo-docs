@@ -1,0 +1,383 @@
+---
+import { Code } from 'astro-expressive-code/components';
+import { parseFileContent } from '@/utils/codeParser';
+import type { ParsedContent } from '@/utils/codeParser';
+import ReactComponentPreview from '@/components/ReactComponentPreview.tsx';
+import fs from 'node:fs';
+import path from 'node:path';
+
+export interface Props {
+  filePath: string;
+}
+
+const { filePath } = Astro.props;
+
+let rawContent: string | null = null;
+let parsedData: ParsedContent | null = null;
+let error: string | null = null;
+let isLoading: boolean = true;
+let fileType: string | null = null;
+let filename: string = '';
+let showPreviewTab = false;
+
+try {
+  if (!filePath) {
+    throw new Error('File path is required.');
+  }
+
+  filename = path.basename(filePath);
+  const extension = path.extname(filePath).toLowerCase();
+
+  if (['.html', '.htm'].includes(extension)) fileType = 'html';
+  else if (['.tsx'].includes(extension)) fileType = 'tsx';
+  else if (['.jsx'].includes(extension)) fileType = 'jsx';
+  else if (['.js', '.mjs', '.cjs'].includes(extension)) fileType = 'js';
+  else if (['.ts', '.mts', '.cts'].includes(extension)) fileType = 'ts';
+  else if (['.css'].includes(extension)) fileType = 'css';
+  else if (['.json'].includes(extension)) fileType = 'json';
+  else if (['.md', '.mdx'].includes(extension)) fileType = 'md';
+  else fileType = 'other';
+
+  if (filePath.startsWith('public/')) {
+    const systemPath = path.join(process.cwd(), filePath); // Resolve to absolute path
+    if (fs.existsSync(systemPath)) {
+      rawContent = fs.readFileSync(systemPath, 'utf-8');
+    } else {
+      throw new Error(`Public file not found: ${filePath} (resolved to ${systemPath})`);
+    }
+  } else if (filePath.startsWith('src/')) {
+    const allSrcFiles: Record<string, string> = import.meta.glob('/src/**/*.{html,tsx,jsx,js,ts,css,json,md,mdx}', { as: 'raw', eager: true });
+    const globPath = `/${filePath}`;
+    
+    if (allSrcFiles[globPath] !== undefined) {
+      rawContent = allSrcFiles[globPath];
+    } else {
+      throw new Error(`File not found in src via import.meta.glob: ${filePath} (checked for ${globPath})`);
+    }
+  } else {
+    throw new Error(`Unsupported file path: ${filePath}. Must start with src/ or public/`);
+  }
+
+  if (rawContent !== null) {
+    parsedData = parseFileContent(rawContent, fileType);
+  } else {
+    throw new Error('Failed to load raw content.');
+  }
+
+  showPreviewTab = (fileType === 'html' || fileType === 'tsx' || fileType === 'jsx');
+  isLoading = false;
+
+} catch (e: any) {
+  console.error(`[CodePreviewTabs.astro] Error processing file ${filePath}:`, e);
+  error = e.message || 'An unknown error occurred while processing the file.';
+  isLoading = false;
+}
+
+const getLanguageClass = (ft: string | null): string => {
+  if (!ft) return 'plaintext';
+  switch (ft) {
+    case 'js': return 'javascript';
+    case 'ts': return 'typescript';
+    case 'jsx': return 'jsx';
+    case 'tsx': return 'tsx';
+    case 'md': case 'mdx': return 'markdown';
+    default: return ft;
+  }
+};
+---
+
+<div class="cct-container">
+  {isLoading && (
+    <div class="cct-loading-state">
+      <div class="cct-filename-bar">
+        <span class="cct-filename">{filename || filePath}</span>
+      </div>
+      <div class="cct-panel cct-message-panel">
+        <svg class="cct-icon-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0711 4.92893L16.2426 7.75736M7.75736 16.2426L4.92893 19.0711M19.0711 19.0711L16.2426 16.2426M7.75736 7.75736L4.92893 4.92893" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>{filename || filePath}を読み込み中...</span>
+      </div>
+    </div>
+  )}
+
+  {error && !isLoading && (
+    <div class="cct-error-state">
+      <div class="cct-filename-bar">
+        <span class="cct-filename">{filename || filePath}</span>
+      </div>
+      <div class="cct-panel cct-message-panel cct-error-panel">
+        <svg class="cct-icon-error" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2 2m2-2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div>
+          <h3 class="cct-error-title">Error loading file: {filename || filePath}</h3>
+          <div class="cct-error-message">{error}</div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {!isLoading && !error && parsedData && (
+    <>
+      <div class="cct-tablist" role="tablist" id={`tabs-${filePath.replace(/[^a-zA-Z0-9]/g, '-')}`}>
+        <button role="tab" class="cct-tab cct-tab-active" data-tab-target="code">コード</button>
+        {showPreviewTab && (
+          <button role="tab" class="cct-tab" data-tab-target="preview">プレビュー</button>
+        )}
+        {!showPreviewTab && fileType && !['html', 'tsx', 'jsx'].includes(fileType) && (
+          <button role="tab" class="cct-tab cct-tab-disabled" disabled>プレビューはありません</button>
+        )}
+      </div>
+      <div class="cct-filename-bar cct-content-filename-bar">
+        <span class="cct-filename">{filename}</span>
+      </div>
+
+      <div class="cct-tab-content-panel active" data-tab-panel="code">
+        <div class="cct-panel cct-code-panel not-prose">
+          <Code lang={getLanguageClass(fileType)} code={parsedData.codeForDisplay} />
+        </div>
+      </div>
+
+      {showPreviewTab && (
+        <div class="cct-tab-content-panel" data-tab-panel="preview">
+          <div class="cct-panel cct-preview-panel">
+            {fileType === 'html' && <iframe srcdoc={parsedData.renderablePreviewContent} class="cct-iframe-preview" title={`${filename} preview`}></iframe>}
+            {(fileType === 'tsx' || fileType === 'jsx') && (
+              <ReactComponentPreview client:visible filePath={filePath} />
+            )}
+          </div>
+        </div>
+      )}
+      
+      {!showPreviewTab && fileType && !['html', 'tsx', 'jsx'].includes(fileType) && (
+         <div class="cct-tab-content-panel" data-tab-panel="preview-na">
+            <div class="cct-panel cct-message-panel">
+              <p>Preview not available for {fileType} files. Showing code instead.</p>
+              <div class="expressive-code mt-2 not-prose">
+                 <Code lang={getLanguageClass(fileType)} code={parsedData.codeForDisplay} />
+              </div>
+            </div>
+         </div>
+      )}
+    </>
+  )}
+</div>
+
+<script define:vars={{ filePath }}>
+  const uniqueId = `tabs-${filePath.replace(/[^a-zA-Z0-9]/g, '-')}`;
+  const tabContainer = document.getElementById(uniqueId);
+
+  if (tabContainer) {
+    const tabs = tabContainer.querySelectorAll('button[role="tab"]:not(.cct-tab-disabled)');
+    const panelsContainer = tabContainer.parentElement; // Assuming panels are siblings of tablist's parent
+    const panels = panelsContainer.querySelectorAll('.cct-tab-content-panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (event) => {
+        event.preventDefault();
+        
+        tabs.forEach(t => t.classList.remove('cct-tab-active'));
+        tab.classList.add('cct-tab-active');
+        
+        const targetPanelId = tab.getAttribute('data-tab-target');
+        
+        panels.forEach(panel => {
+          if (panel.getAttribute('data-tab-panel') === targetPanelId) {
+            panel.classList.add('active');
+          } else {
+            panel.classList.remove('active');
+          }
+        });
+      });
+    });
+  }
+</script>
+
+<style is:global>
+  .cct-container {
+    margin: 1.5rem 0;
+    border: 1px solid var(--sl-color-gray-4, #ccc); /* Fallback color */
+    border-radius: 0.5rem; /* Consistent rounding */
+    background-color: var(--sl-color-bg-default, white);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  .cct-filename-bar {
+    background-color: var(--sl-color-bg-sidebar, var(--sl-color-gray-6, #f0f0f0)); /* Use sidebar bg or a light gray */
+    color: var(--sl-color-text-sidebar, var(--sl-color-text, #333)); /* Use sidebar text or default text */
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--sl-color-gray-4, #ccc);
+    border-top-left-radius: calc(0.5rem - 1px); /* Adjust for border */
+    border-top-right-radius: calc(0.5rem - 1px);
+  }
+  .cct-content-filename-bar {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  .cct-filename {
+    font-family: var(--sl-font-mono, monospace);
+    font-size: 0.875rem;
+  }
+
+  .cct-panel {
+    padding: 1rem;
+    min-height: 8rem; /* 128px, was min-h-32 */
+  }
+  .cct-code-panel {
+    background-color: var(--astro-code-background, var(--sl-color-gray-6, #f5f5f5));
+    border-bottom-left-radius: calc(0.5rem - 1px);
+    border-bottom-right-radius: calc(0.5rem - 1px);
+    padding: 0; /* Expressive code handles its own padding */
+  }
+  .cct-code-panel .expressive-code { /* Ensure expressive code itself has bottom radius */
+    border-bottom-left-radius: calc(0.5rem - 1px);
+    border-bottom-right-radius: calc(0.5rem - 1px);
+    overflow: hidden; /* To make radius clip content */
+  }
+   .cct-code-panel .not-prose { /* Override Starlight's .not-prose if it adds margins */
+    margin: 0;
+  }
+
+
+  .cct-preview-panel {
+    background-color: var(--sl-color-bg-default, white);
+    border-bottom-left-radius: calc(0.5rem - 1px);
+    border-bottom-right-radius: calc(0.5rem - 1px);
+  }
+
+  .cct-message-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: var(--sl-color-bg-default, white);
+    border-radius: calc(0.5rem - 1px); /* For standalone message panels */
+  }
+  
+  .cct-loading-state .cct-message-panel,
+  .cct-error-state .cct-message-panel {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+
+  .cct-error-panel {
+    color: var(--sl-color-red, red); /* Starlight might have specific error color vars */
+    background-color: var(--sl-color-red-low, #ffebee);
+    border: 1px solid var(--sl-color-red, red);
+  }
+  .cct-error-title {
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  .cct-error-message {
+    font-size: 0.875rem;
+  }
+
+  .cct-icon-spinner, .cct-icon-error {
+    width: 1.5rem; /* 24px */
+    height: 1.5rem; /* 24px */
+    stroke: currentColor;
+  }
+  .cct-icon-spinner {
+    animation: cct-spin 1s linear infinite;
+  }
+  @keyframes cct-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .cct-tablist {
+    display: flex;
+    border-bottom: 1px solid var(--sl-color-gray-4, #ccc);
+    background-color: var(--sl-color-bg-canvas, var(--sl-color-gray-7, #f9fafb)); /* Slightly off-main background */
+    padding-left: 0.5rem; /* Indent tabs slightly */
+    border-top-left-radius: calc(0.5rem - 1px);
+    border-top-right-radius: calc(0.5rem - 1px);
+    margin: 0; /* Reset margin to avoid Starlight's default */
+  }
+
+  .cct-tab {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: var(--sl-color-text-muted, var(--sl-color-gray-2, #555)); /* Muted text color */
+    font-size: 0.9rem;
+    border-bottom: 2px solid transparent;
+    margin: 0 !important; 
+  }
+
+  .cct-tab:hover {
+    color: var(--sl-color-text, #333);
+  }
+
+  .cct-tab.cct-tab-active {
+    color: var(--sl-color-text-accent, var(--sl-color-accent, blue)); /* Accent color */
+    border-bottom-color: var(--sl-color-text-accent, var(--sl-color-accent, blue));
+    font-weight: 500;
+  }
+
+  .cct-tab.cct-tab-disabled {
+    color: var(--sl-color-gray-3, #aaa);
+    cursor: not-allowed;
+  }
+
+  .cct-tab-content-panel {
+    display: none;
+    /* Fix for Starlight margin issue */
+    margin-top: 0 !important; 
+  }
+  .cct-tab-content-panel.active {
+    display: block;
+    /* Fix for Starlight margin issue */
+    margin-top: 0 !important;
+  }
+
+  .cct-iframe-preview {
+    width: 100%;
+    height: 16rem; /* 256px, was h-64 */
+    border: none;
+  }
+  
+  .expressive-code.mt-2 { /* From original, if needed for "preview N/A" code block */
+      margin-top: 0.5rem;
+  }
+  .not-prose .expressive-code pre { /* Copied from original, might need adjustment */
+    font-size: 0.875em;
+    line-height: 1.6;
+  }
+
+  /* Styles for ReactComponentPreview states */
+  .cct-react-message {
+    display: flex;
+    flex-direction: column; /* Stack icon and text vertically */
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    gap: 0.5rem; /* Space between icon and text */
+    min-height: 8rem; /* Match other panel heights */
+  }
+
+  .cct-react-loading p {
+    color: var(--sl-color-text-muted, var(--sl-color-gray-2, #555));
+  }
+
+  .cct-react-error-panel {
+    /* Reuses .cct-error-title and .cct-error-message from main component for consistency */
+    /* but provides its own container look if needed, or can be simpler */
+    color: var(--sl-color-red, red);
+    border: 1px solid var(--sl-color-red-low, #ffdddd);
+    background-color: var(--sl-color-red-lowest, #fff5f5); /* A very light red */
+    border-radius: 0.25rem;
+    width: 100%; /* Take full width of its container in the preview panel */
+  }
+  
+  .cct-react-error-panel .cct-icon-error { /* Ensure icon color matches */
+    color: var(--sl-color-red, red);
+  }
+
+  .cct-react-render-error {
+    color: var(--sl-color-red, red);
+    padding: 1rem;
+    text-align: center;
+  }
+</style>
