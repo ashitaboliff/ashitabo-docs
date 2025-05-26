@@ -4,7 +4,6 @@ import starlight from '@astrojs/starlight';
 import react from '@astrojs/react';
 import tailwindcssVite from '@tailwindcss/vite';
 
-// https://astro.build/config
 export default defineConfig({
 	vite: {
 		plugins: [tailwindcssVite()],
@@ -12,39 +11,43 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'あしたぼコマ表開発ドキュメント',
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/ashitabo' }],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/ashitaboliff' }],
+			locales: {
+				root: {
+					label: '日本語',
+					lang: 'ja',
+				},
+			},
 			sidebar: [
 				{
-					label: 'はじめに',
+					label: 'トップ',
 					items: [
 						{ label: 'トップページ', slug: 'index' },
+						{ label: 'はじめに', slug: 'getstart' },
+						{ label: '用語集', slug: 'getstart/term' },
 					],
 				},
 				{
-					label: '開発ドキュメント',
-					items: [
-						{ label: 'コーディング規約など', slug: 'coding' },
-						{ label: 'デザイン開発', slug: 'design' },
-						{ label: 'Docker開発', slug: 'docker' },
-						{ label: 'Reactの基礎', slug: 'react' },
-						{ label: '実践課題', slug: 'task' },
-					],
+					label: '開発スタート',
+					autogenerate: { directory: 'setup' },
 				},
 				{
-					label: 'Guides',
-					items: [
-						// Each item here is one entry in the navigation menu.
-						{ label: 'Example Guide', slug: 'guides/example' },
-					],
+					label: 'Git, GitHub',
+					autogenerate: { directory: 'git' },
 				},
 				{
-					label: 'Reference',
-					autogenerate: { directory: 'reference' },
+					label: 'Web開発の基礎（座学）',
+					autogenerate: { directory: 'web' },
+				},
+				{
+					label: 'Web開発の基礎（実践）',
+					autogenerate: { directory: 'task' },
 				},
 			],
 			customCss: [
 				'./src/assets/app.css',
-			]
+			],
+			credits: true,
 		}),
 		react(),
 	],

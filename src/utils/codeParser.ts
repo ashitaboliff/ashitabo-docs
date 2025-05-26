@@ -125,11 +125,5 @@ export function parseFileContent(rawContent: string, fileType: string): ParsedCo
     renderablePreviewContent,
     originalPreviewCode
   };
-  console.log(`[codeParser] For fileType: ${fileType}`);
-  console.log(`[codeParser] Input raw content length: ${rawContent.length}`);
-  // console.log(`[codeParser] Content after start/end processing length: ${content.length}`); // 'content' here is after start/end and ignore block processing
-  console.log(`[codeParser] codeForDisplay length: ${result.codeForDisplay.length}`);
-  console.log(`[codeParser] renderablePreviewContent length: ${result.renderablePreviewContent.length}`);
-  console.log(`[codeParser] originalPreviewCode length: ${result.originalPreviewCode.length}`);
   return result;
 }
