@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # またはデプロイしたいブランチ名
+      - master
   workflow_dispatch: # 手動実行も可能にする
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # プロジェクトに合わせてNode.jsのバージョンを指定
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
