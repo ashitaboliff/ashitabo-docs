@@ -2,7 +2,7 @@
 title: 開発のためのドキュメント
 ---
 
-ここでは、あしたぼコマ表の開発を進めるための基本的な方法について説明します。
+ここでは、あしたぼホームページの開発を進めるための基本的な方法について説明します。
 
 ## Gitの使い方
 
@@ -89,7 +89,7 @@ Git で変更を記録し、リモートリポジトリ（GitHub 上の共有リ
 
 作業用ブランチでの開発が完了したら、その変更内容を `develop-main` ブランチに反映させるために「プルリクエスト」を作成します。
 
-1.  **GitHub へアクセス:** ブラウザで、あしたぼコマ表の GitHub リポジトリ ([https://github.com/watabegg/k_on_line](https://github.com/watabegg/k_on_line)) を開きます。
+1.  **GitHub へアクセス:** ブラウザで、あしたぼホームページの GitHub リポジトリ ([https://github.com/ashitabo/ashitabo_main](https://github.com/ashitabo/ashitabo_main)) を開きます。
 2.  **Pull requests タブ:** ページ上部のメニューから「Pull requests」タブをクリックします。
 3.  **プルリクエスト作成:**
     -   ページ上部に自分の作業用ブランチ名が表示され、「Compare & pull request」ボタンが表示されている場合は、それをクリックします。

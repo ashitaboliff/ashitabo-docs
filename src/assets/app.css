@@ -1,2 +1,28 @@
 @import "tailwindcss" prefix(tw);
 @plugin "daisyui";
+
+/* Target unordered lists within the main content area */
+.sl-markdown-content ul {
+  list-style-type: disc !important; /* Use !important to ensure override */
+  margin-left: 2em; /* Add some default indentation */
+  padding-left: 1em; /* Add padding for the bullets */
+}
+
+/* Target ordered lists within the main content area */
+.sl-markdown-content ol {
+  list-style-type: decimal !important; /* Use !important to ensure override */
+  margin-left: 2em; /* Add some default indentation */
+  padding-left: 1em; /* Add padding for the numbers */
+}
+
+/* Ensure nested lists also get appropriate styling and indentation */
+.sl-markdown-content ul ul,
+.sl-markdown-content ol ol,
+.sl-markdown-content ul ol,
+.sl-markdown-content ol ul {
+  margin-left: 2em;
+}
+
+.sl-markdown-content li {
+  margin-bottom: 0.5em; /* Add some spacing between list items */
+}

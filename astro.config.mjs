@@ -10,7 +10,7 @@ export default defineConfig({
 	},
 	integrations: [
 		starlight({
-			title: 'あしたぼコマ表開発ドキュメント',
+			title: 'あしたぼホームページ開発ドキュメント',
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/ashitaboliff' }],
 			locales: {
 				root: {

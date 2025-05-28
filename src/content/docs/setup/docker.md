@@ -104,7 +104,7 @@ GitHub アカウントがまだない場合は作成し、ユーザー名を担�
     ```
 -   以下のコマンドを実行して、リポジトリをクローンします。
     ```bash
-    git clone https://github.com/watabegg/k_on_line.git
+    git clone https://github.com/ashitabo/ashitabo_main.git
     ```
     ホームディレクトリ直下に `k_on_line` フォルダが作成されれば成功です。
     ![リポジトリクローン完了 (Ubuntu)](/assets/images/docker/github-02.png)

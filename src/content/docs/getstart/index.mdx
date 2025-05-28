@@ -2,7 +2,7 @@
 title: はじめに
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, Badge } from '@astrojs/starlight/components';
 
 ようこそ！ **あしたぼホームページ** の **開発ドキュメント** へ！マジ嬉しい！ありがとう！来てくれて！！！
 
@@ -11,25 +11,43 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 このドキュメントは、あしたぼホームページの開発に関わるすべての人が対象です。初心者から経験者まで、誰でも理解できるように書かれています。
 このドキュメントを通じて、あしたぼホームページの開発に必要な知識とスキルを身につけてください。
 
-あとめちゃくちゃガクチカとかにしちゃってください！いくら盛ってもいい
+またこのドキュメントはAIエージェント(Cline, GitHub Copilot)を併用して書いているので文末表現や文章の堅さがまちまちです。読みづらかったらごめん！
 
 ## クイックスタート
-まず、あなたの開発環境をセットアップする必要があります。以下の3種類の方法から環境の構築方法を選んでください。
-<CardGrid stagger>
-  <Card title="Dockerで開発" icon="seti:docker">
-    Dockerを使って、あしたぼホームページの開発環境を構築します。Dockerはコンテナ技術を利用して、環境構築を簡単にします。
-    <a href="/setup/docker">詳しくはこちら</a>
-  </Card>
-  <Card title="node.jsを入れて開発(Windows)" icon="seti:windows">
-    Node.jsを使って、あしたぼホームページの開発環境を構築します。Node.jsはJavaScriptの実行環境で、サーバーサイドの開発に適しています。
-    <a href="/setup/node">詳しくはこちら</a>
-  </Card>
-  <Card title="node.jsを入れて開発(Linux)" icon="linux">
-    Webブラウザ上で、あしたぼホームページの開発環境を構築します。特別なソフトウェアは不要で、すぐに始められます。
-    <a href="/setup/web">詳しくはこちら</a>
-  </Card>
-</CardGrid>
 
-- [Dockerを使った開発環境の構築](./docker.md)
-- [Node.jsを使った開発環境の構築](./node.md)
-- [Webブラウザ上での開発環境の構築](./web.md)
+**オーキド博士**「ここに3びきのポケモンがおるじゃろ？すきなのを1ぴきえらぶんじゃ」  
+*訳）環境構築には以下の3つの方法があります。自分に合った方法を選んでください。*
+<Card title="node.jsを入れて開発(Linux)" icon="linux">
+  <Badge text="おすすめ！" variant="success" />
+  WindowsのWSL、もしくはMacOSを使って、あしたぼホームページの開発環境を構築します。インストールするのはNode.jsとVS Codeで簡単です！
+  <a href="/setup/linux">詳しくはこちら</a>
+</Card>
+<Card title="Dockerで開発" icon="seti:docker">
+  <Badge text="難しい" variant="danger" />
+  Dockerを使って、あしたぼホームページの開発環境を構築します。Dockerはコンテナ技術を利用して、環境構築を簡単にしますが、環境構築まで行くのがダルいです
+  <a href="/setup/docker">詳しくはこちら</a>
+</Card>
+<Card title="node.jsを入れて開発(Windows)" icon="seti:windows">
+  <Badge text="簡単" variant="note" />
+  WindowsでNode.jsを使って、あしたぼホームページの開発環境を構築します。VS CodeとNode.js, Gitをインストールするだけですがあまり快適な開発ではないので面倒くさがりの人だけこれを選んでください
+  <a href="/setup/windows">詳しくはこちら</a>
+</Card>
+
+## 開発のモチベーション
+あしたぼホームページは、開発者のわたべが先輩たちの開発した既存のホームページ、部室予約システムをモダンな技術で再構築し、かつその技術を使って新たな機能を追加していくことを目的としています。
+このプロジェクトを通じて、以下のことを学ぶことができます。
+-   **Next.js** と **TypeScript**, **React** の使い方
+-   **Figma** を使ったデザインの実装
+-   **Tailwind CSS** を使ったスタイリング
+-   **Git** を使ったチーム開発の方法
+-   **Docker** を使った開発環境の構築と運用
+-   **AIエージェント** を使った開発の効率化
+
+以上の技術を学ぶことで、現代のWeb開発に必要なスキルを身につけることができますが、普通に僕もTypeScript経験1年(2025年5月現在)の若造なのでまだまだ知らないことがたくさんあります。
+このプロジェクト、このドキュメントを通じて、もしくは超えて、皆さんがたくさんの知識をつけ、かつこのプロジェクトが受け継がれていくことを願っています。
+
+また、好きなようにガクチカやポートフォリオに使ってください。嘘もOK！
+
+### むかうさき
+あしたぼホームページは、シンプルに"あしたぼでの活動をより快適にする"ことを目指しています。
+こんなにモダンでオーバースペックなサイト構成なので出来ることは全てしたいです！頑張るぞ～！

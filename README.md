@@ -1,54 +1,72 @@
-# Starlight Starter Kit: Basics
+# あしたぼホームページ開発用ドキュメント
 
 [![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
 
-```
-npm create astro@latest -- --template starlight
-```
+このリポジトリは、あしたぼホームページに関連するドキュメントを管理するためのものです。
+[Astro](https://astro.build/) と [Starlight](https://starlight.astro.build/) を使用して構築されています。
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/starlight/tree/main/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/starlight/tree/main/examples/basics)
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/withastro/starlight&create_from_path=examples/basics)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwithastro%2Fstarlight%2Ftree%2Fmain%2Fexamples%2Fbasics&project-name=my-starlight-docs&repository-name=my-starlight-docs)
+## 📚 ドキュメントの内容
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+このドキュメントサイトでは、あしたぼホームページの開発に携わってくださる皆さんに向けて、VS Codeの拡張機能から **useEfectは使うな** という話まで、さまざまな情報を提供しています。
 
-## 🚀 Project Structure
+詳細な内容は `src/content/docs/` ディレクトリ内の各ドキュメントを参照してください。
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+## 🚀 プロジェクト構造
+
+Astro + Starlightプロジェクトの基本的なフォルダ構成は以下の通りです。
 
 ```
 .
-├── public/
+├── public/              # 静的アセット (faviconなど)
 ├── src/
-│   ├── assets/
+│   ├── assets/          # 画像などのアセット
+│   ├── components/      # Astroコンポーネント
 │   ├── content/
-│   │   ├── docs/
-│   └── content.config.ts
-├── astro.config.mjs
+│   │   ├── docs/        # Markdown/MDXドキュメントファイル
+│   └── content.config.ts # Starlightの設定ファイル
+├── astro.config.mjs     # Astroの設定ファイル
 ├── package.json
 └── tsconfig.json
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+Starlightは `src/content/docs/` ディレクトリ内の `.md` または `.mdx` ファイルを検索し、それぞれのファイル名に基づいてルートを公開します。
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+`src/components/` ディレクトリには、Astroコンポーネントを配置します。これらのコンポーネントは、Markdownファイル内で使用できます。
 
-Static assets, like favicons, can be placed in the `public/` directory.
+画像は `src/assets/` に追加し、Markdownファイル内から相対リンクで埋め込むことができます。
 
-## 🧞 Commands
+ファビコンなどの静的アセットは `public/` ディレクトリに配置します。
 
-All commands are run from the root of the project, from a terminal:
+## 🛠 開発環境のセットアップ
+このプロジェクトをローカルで開発するためには、以下の手順に従ってください。
+1. **Node.jsのインストール**: Node.jsがインストールされていない場合は、[Node.jsの公式サイト](https://nodejs.org/)からインストールしてください。
+2. **依存関係のインストール**: プロジェクトのルートディレクトリで以下のコマンドを実行します。
+   ```bash
+   npm install
+   ```
+3. **ローカル開発サーバーの起動**: 以下のコマンドでローカルサーバーを起動します。
+   ```bash
+   npm run dev
+   ```
+4. **ブラウザで確認**: ブラウザで `http://localhost:4321` にアクセスすると、ローカルのStarlightドキュメントサイトが表示されます。
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+## 🧞 コマンド
 
-## 👀 Want to learn more?
+すべてのコマンドは、プロジェクトのルートディレクトリからターミナルで実行します。
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+| コマンド                  | 説明                                                                 |
+| :------------------------ | :------------------------------------------------------------------- |
+| `npm install`             | 依存関係をインストールします                                         |
+| `npm run dev`             | ローカル開発サーバーを `localhost:4321` で起動します                 |
+| `npm run build`           | プロダクションサイトを `./dist/` にビルドします                      |
+| `npm run preview`         | ビルドしたサイトをデプロイ前にローカルでプレビューします             |
+| `npm run astro ...`       | `astro add` や `astro check` などのCLIコマンドを実行します           |
+| `npm run astro -- --help` | Astro CLIのヘルプを表示します                                        |
+
+## 👀 さらに詳しく知りたい場合
+
+*   [Starlightドキュメント](https://starlight.astro.build/)
+*   [Astroドキュメント](https://docs.astro.build/)
+*   [Astro Discordサーバー](https://astro.build/chat)
+
+---

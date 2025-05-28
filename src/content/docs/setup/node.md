@@ -84,7 +84,7 @@ cd C:\Users\(あなたのWindowsユーザー名)
 次に、以下のコマンドを実行して、あしたぼコマ表のリポジトリをローカル PC にコピー（クローン）します。
 
 ```bash
-git clone https://github.com/watabegg/k_on_line.git
+git clone https://github.com/ashitabo/ashitabo_main.git
 ```
 
 コマンド実行後、`k_on_line` というフォルダが作成され、その中にプロジェクトファイルがダウンロードされます。
