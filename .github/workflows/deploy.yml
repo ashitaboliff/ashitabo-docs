@@ -1,0 +1,52 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # またはデプロイしたいブランチ名
+  workflow_dispatch: # 手動実行も可能にする
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # プロジェクトに合わせてNode.jsのバージョンを指定
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Astro site
+        run: npm run build # astro.config.mjsのbase設定に基づいてビルドされます
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Astroのビルド出力は 'dist' ディレクトリです。
+          # baseオプションが設定されている場合、GitHub Pagesは
+          # そのサブディレクトリから提供する必要があるため、
+          # ここでは 'dist' を指定します。
+          # GitHub Pagesアクションが自動的に正しいサブディレクトリを処理します。
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
