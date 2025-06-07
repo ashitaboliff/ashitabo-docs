@@ -1,0 +1,232 @@
+---
+title: Tailwind CSS (応用編)
+description: Tailwind CSSの高度なカスタマイズ、プラグイン開発、複雑なUIパターンの実装方法などを掘り下げます。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+[Tailwind CSSの基礎](/web/tailwind)では、ユーティリティファーストの考え方や基本的なクラスの使い方、daisyUIとの連携について学びました。
+この応用編では、Tailwind CSSをさらに深く理解し、プロジェクトのデザインシステムをより柔軟に、より強力にカスタマイズするためのテクニックを紹介します。
+`tailwind.config.ts` を使った詳細な設定、プラグインの活用と自作、複雑なUIパターンの構築方法などを学んでいきましょう。
+
+## `tailwind.config.ts` をマスターする
+
+`tailwind.config.ts`（または `.js`）ファイルは、Tailwind CSSの挙動をカスタマイズするための中心的な場所です。
+「あしたぼホームページ」の `tailwind.config.ts` を参考にしながら、どのような設定が可能か見ていきましょう。
+
+### `theme` オブジェクトのカスタマイズ
+
+`theme` オブジェクト内で、色、フォント、スペーシング、ブレークポイントなど、デザインシステムのあらゆる側面をカスタマイズできます。
+`theme.extend` を使うと、Tailwindのデフォルト設定を保持しつつ、新しい値を追加したり一部を上書きしたりできます。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">tailwind.config.ts (カスタマイズ例)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  // tailwind.config.ts
+  import type { Config } from 'tailwindcss';
+
+  const config: Config = {
+    content: ['./src/**/**/*.{js,ts,jsx,tsx,mdx}'],
+    theme: {
+      // デフォルトを上書きしたい場合はここに直接書く
+      // screens: { // 例: デフォルトのブレークポイントを完全に置き換える
+      //   'tablet': '640px',
+      //   'laptop': '1024px',
+      // },
+      extend: { // デフォルトを拡張する場合
+        colors: {
+          'brand-primary': '#FF6B6B',
+          'brand-secondary': '#4ECDC4',
+          'custom-gray': {
+            100: '#f7fafc',
+            // ...
+            900: '#1a202c',
+          },
+        },
+        spacing: {
+          '72': '18rem', // 72 * 0.25rem = 18rem
+          '84': '21rem',
+          '96': '24rem',
+        },
+        fontFamily: {
+          // 基礎編で触れたカスタムフォント設定
+          nicoMoji: ['var(--nicomoji)', 'sans-serif'],
+          notojp: ['var(--font-noto-jp)', 'sans-serif'],
+        },
+        animation: {
+          'spin-slow': 'spin 3s linear infinite',
+          'bounce-custom': 'bounce 1s infinite alternate',
+        },
+        keyframes: {
+          bounce: { // bounceアニメーションをカスタマイズ (例)
+            '0%, 100%': {
+              transform: 'translateY(-15%)',
+              animationTimingFunction: 'cubic-bezier(0.8,0,1,1)',
+            },
+            '50%': {
+              transform: 'none',
+              animationTimingFunction: 'cubic-bezier(0,0,0.2,1)',
+            },
+          },
+        },
+      },
+    },
+    plugins: [
+      // require('@tailwindcss/typography'),
+      // require('daisyui'),
+    ],
+    // daisyui: { themes: [...] }
+  };
+  export default config;
+  ```
+  </Fragment>
+</CodePreviewTabs>
+**主なカスタマイズ項目:**
+-   `colors`: プロジェクト独自のブランドカラーや、既存の色のバリエーションを追加できます。
+-   `spacing`: `p-`, `m-`, `w-`, `h-` などで使われるスペーシングの単位を追加・変更できます。
+-   `fontFamily`: カスタムフォントを定義します。
+-   `screens`: レスポンシブデザインのブレークポイント (`sm:`, `md:`など) を変更・追加できます。
+-   `animation`, `keyframes`: カスタムアニメーションを定義できます。
+
+### `variants` の制御 (Tailwind CSS v2以前の知識、v3以降はJITでほぼ不要)
+Tailwind CSS v3以降はJIT (Just-In-Time) モードがデフォルトとなり、ほとんどのバリアント（`hover:`, `focus:`, `dark:`など）が自動で利用可能になりました。
+v2以前では、`variants` オブジェクトで各ユーティリティにどの状態バリアントを生成するか細かく指定する必要がありましたが、現在は基本的に不要です。
+ただし、プラグインなどで新しいユーティリティを追加する際には、そのユーティリティにどのバリアントを適用可能にするか意識することがあります。
+
+## プラグインの活用と自作
+
+Tailwind CSSの機能を拡張するためにプラグインを利用したり、自分で作成したりできます。
+
+### 公式プラグインとコミュニティプラグイン
+
+-   **`@tailwindcss/typography`**: Markdownなどから生成されたHTMLコンテンツ（`prose`クラス）に美しいデフォルトスタイルを適用します。
+-   **`@tailwindcss/forms`**: フォーム要素（input, select, checkboxなど）に基本的なスタイルを適用し、カスタマイズしやすくします。
+-   **`@tailwindcss/aspect-ratio`**: 要素のアスペクト比を簡単に制御できるユーティリティを提供します。
+-   **daisyUI**: [基礎編](/web/tailwind#daisyui-tailwind-cssをもっと便利に)で紹介したように、コンポーネントクラスを提供します。
+
+これらのプラグインは `npm install` で追加し、`tailwind.config.ts` の `plugins` 配列に `require()` で読み込みます。
+
+### カスタムプラグインの作成
+
+独自のユーティリティやコンポーネントクラス、基本スタイルを追加したい場合、カスタムプラグインを作成できます。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">カスタムプラグイン (例)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```javascript
+  // tailwind.config.ts の plugins 部分
+  const plugin = require('tailwindcss/plugin');
+
+  module.exports = {
+    // ...
+    plugins: [
+      plugin(function({ addUtilities, addComponents, theme }) {
+        const newUtilities = {
+          '.skew-10deg': {
+            transform: 'skewY(-10deg)',
+          },
+          '.skew-15deg': {
+            transform: 'skewY(-15deg)',
+          },
+        };
+        addUtilities(newUtilities, ['responsive', 'hover']); // バリアントも指定可能
+
+        const buttons = {
+          '.btn-orange': {
+            backgroundColor: theme('colors.orange.500'),
+            color: '#fff',
+            '&:hover': {
+              backgroundColor: theme('colors.orange.700'),
+            },
+            // ...paddingやborderRadiusなど
+          },
+        };
+        addComponents(buttons);
+      }),
+    ],
+  };
+  ```
+  </Fragment>
+</CodePreviewTabs>
+-   `addUtilities()`: 新しいユーティリティクラスを追加します。
+-   `addComponents()`: 新しいコンポーネントクラス（複数のスタイルをまとめたもの）を追加します。
+-   `addBase()`: 基本的なHTML要素のスタイル（`body`, `h1`など）を追加・変更します。
+-   `theme()`: `tailwind.config.ts` の `theme` オブジェクトの値（色、スペーシングなど）を参照できます。
+
+## 複雑なUIパターンの構築
+
+Tailwind CSSのユーティリティクラスを組み合わせることで、複雑なUIパターンも構築できます。
+重要なのは、HTMLの構造を適切に設計し、FlexboxやGridといったレイアウトユーティリティを効果的に使うことです。
+
+### 例: レスポンシブなナビゲーションバー
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">ナビゲーションバー (HTML + Tailwind)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```html
+  <nav class="bg-gray-800 p-4">
+    <div class="container mx-auto flex items-center justify-between">
+      <div class="text-white font-bold text-xl">ロゴ</div>
+      {/* モバイル用ハンバーガーメニューボタン (JSでの制御が必要) */}
+      <div class="md:hidden">
+        <button id="mobile-menu-button" class="text-white focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+      </div>
+      {/* PC用ナビゲーションリンク */}
+      <div id="desktop-menu" class="hidden md:flex space-x-4">
+        <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">ホーム</a>
+        <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">サービス</a>
+        <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">会社概要</a>
+      </div>
+    </div>
+    {/* モバイル用メニュー (JSで表示/非表示を切り替え) */}
+    <div id="mobile-menu" class="hidden md:hidden mt-2">
+      <a href="#" class="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">ホーム</a>
+      <a href="#" class="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">サービス</a>
+      <a href="#" class="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">会社概要</a>
+    </div>
+  </nav>
+
+  <script>
+    // 簡単なメニュー開閉のJavaScript例
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  </script>
+  ```
+  </Fragment>
+</CodePreviewTabs>
+この例では、`md:` プレフィックスを使って画面幅に応じて表示を切り替え、Flexbox (`flex`, `items-center`, `justify-between`) で要素を配置しています。
+モバイルメニューの開閉にはJavaScriptが必要になります。React環境では `useState` を使って表示状態を管理します。
+
+## `@apply` ディレクティブの注意点
+
+CSSファイル内で、複数のユーティリティクラスをまとめて1つのカスタムクラスとして定義したい場合、`@apply` ディレクティブを使うことができます。
+```css
+/* styles.css */
+.btn-custom-blue {
+  @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
+}
+```
+HTMLでは `<button class="btn-custom-blue">ボタン</button>` と書けます。
+これは便利ですが、Tailwind CSSの「HTML内でスタイルが完結する」という思想からは少し外れます。
+多用しすぎると、結局従来のCSS設計に戻ってしまい、Tailwindのメリットが薄れる可能性があります。
+コンポーネントの再利用性が高い場合や、非常に多くのユーティリティを繰り返し使う場合に限定的に使用するのが良いでしょう。Reactなどのコンポーネントベースのフレームワークでは、コンポーネント自体を再利用することで `@apply` の必要性を減らせます。
+
+## まとめ
+
+-   `tailwind.config.ts` を使いこなすことで、プロジェクトのデザインシステムを細部まで制御できます。
+-   プラグインを活用したり、自作したりすることで、Tailwind CSSの機能を拡張できます。
+-   FlexboxやGridなどのレイアウトユーティリティを理解し、組み合わせることで複雑なUIも構築可能です。
+-   `@apply` は便利ですが、使い所を見極めましょう。
+
+Tailwind CSSの応用的なテクニックを身につけることで、より洗練された、メンテナンスしやすいUIを効率的に開発できるようになります。
+公式ドキュメントは非常に充実しているので、困ったときや新しいテクニックを探すときには積極的に参照しましょう。
+[用語集](/getstart/term)も忘れずに。

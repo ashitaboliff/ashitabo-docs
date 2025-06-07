@@ -1,0 +1,147 @@
+---
+title: Dockerによる環境構築
+description: Dockerを使用して「あしたぼホームページ」の開発環境を構築する手順を説明します。WSL上での利用を推奨します。
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+このページでは、Dockerという技術を使って、「あしたぼホームページ」の開発環境を簡単に、そしてあなたのPC環境を汚さずに構築する方法を説明します。
+特にWindowsをお使いの方は、WSL (Windows Subsystem for Linux) 上でDockerを利用することを強く推奨します。
+
+Dockerを使うと、開発に必要なソフトウェア（Node.js、データベースなど）がひとまとめになった「コンテナ」という箱の中でプロジェクトを動かすことができます。これにより、自分のPCに直接あれこれインストールする必要がなくなり、環境の違いによるトラブルも減らせます。
+
+## 事前準備
+
+Docker環境を構築する前に、以下の準備ができているか確認してください。
+
+-   **Visual Studio Code (VS Code):** コードエディタです。インストールがまだの方は[公式サイト](https://code.visualstudio.com/)からどうぞ。
+-   **Git:** バージョン管理システムです。インストールと基本的な設定は[Git, GitHubの使い方ガイド(初級)](/git/beginner)を参照してください。
+
+## Docker環境の構築 (Windows + WSL向け)
+
+<Steps>
+1.  **WSLの有効化とUbuntuのインストール**
+    まだWSLをセットアップしていない場合は、[Node.jsによる環境構築 (Linux / WSL)](/setup/node-linux#wslの準備-windowsユーザー向け) の手順に従って、WSLを有効化し、Ubuntuをインストールしてください。
+    {/* ここにWSL有効化とUbuntuインストール完了後のイメージ画像を挿入 */}
+
+2.  **Docker Desktopのインストール**
+    [Docker Desktop 公式サイト](https://www.docker.com/products/docker-desktop/)からWindows版のインストーラーをダウンロードし、実行します。
+    画面の指示に従ってインストールを進めてください。設定は基本的にデフォルトのままでOKです。
+    {/* ここにDocker Desktopインストーラーの主要画面のスクリーンショットを挿入 */}
+    {/* 例：public/assets/images/setup/docker-desktop-installer.png */}
+    インストール完了後、Docker Desktopを起動します。初回起動時にはチュートリアルが表示されることがありますが、スキップしても構いません。
+
+3.  **Docker DesktopとWSLの連携設定**
+    Docker DesktopがWSLと正しく連携するように設定します。
+    -   タスクトレイにあるDocker Desktopのアイコンを右クリックし、「Settings」（設定）を選択します。
+    -   左側のメニューから「Resources」>「WSL Integration」を選択します。
+    -   「Enable integration with my default WSL distro」がオンになっていることを確認します。
+    -   「Ubuntu」（またはお使いのWSLディストリビューション名）のトグルスイッチがオンになっていることを確認します。もしオフであればオンにしてください。
+        {/* ここにDocker DesktopのWSL Integration設定画面のスクリーンショットを挿入 */}
+        {/* 例：public/assets/images/setup/docker-wsl-integration.png */}
+    -   「Apply & Restart」をクリックして設定を適用します。Docker Desktopが再起動します。
+
+</Steps>
+
+これで、Dockerを利用するための基本的な環境が整いました。
+
+## プロジェクトの準備 (WSLのUbuntu上で行う)
+
+<Steps>
+1.  **WSL (Ubuntu) ターミナルを開く**
+    Windowsのスタートメニューから「Ubuntu」を起動するか、コマンドプロンプトやPowerShellで `wsl` と入力してEnterキーを押します。
+
+2.  **Gitのインストール (Ubuntu)**
+    WSLのUbuntu環境にGitがまだインストールされていない場合は、以下のコマンドでインストールします。
+    ```bash
+    sudo apt update
+    sudo apt install git -y
+    ```
+    インストール後、`git --version` でバージョンが表示されるか確認してください。
+
+3.  **Gitの初期設定 (Ubuntu)**
+    Ubuntu環境内で、Gitのユーザー名とメールアドレスを設定します。これはGitHubアカウントで使用しているものと同じにしてください。
+    ```bash
+    git config --global user.name "あなたのGitHubユーザー名"
+    git config --global user.email "あなたのGitHub登録メールアドレス"
+    ```
+
+4.  **プロジェクトのクローン (Ubuntu)**
+    開発したいディレクトリに移動し（例: `cd ~` でホームディレクトリへ）、以下のコマンドで「あしたぼホームページ」のソースコードをクローンします。
+    ```bash
+    git clone https://github.com/watabegg/k_on_line.git
+    ```
+    <Aside type="note">リポジトリURLは、実際の「あしたぼホームページ」のGitHubリポジトリのURLに置き換えてください。上記は例です。</Aside>
+    クローンが完了すると、`k_on_line` というディレクトリが作成されます。
+
+5.  **VS CodeでWSL上のプロジェクトを開く**
+    -   VS Codeを起動します。
+    -   左下の緑色の「>\<」のようなアイコン（リモートウィンドウを開く）をクリックし、「WSLに接続する...」または「Connect to WSL」を選択します。
+    -   接続先のディストリビューションとして「Ubuntu」を選択します。新しいVS CodeウィンドウがWSL環境に接続された状態で開きます。
+    -   VS Codeのメニューから「ファイル」>「フォルダーを開く...」を選択し、先ほどクローンした `k_on_line` フォルダを開きます。
+        {/* ここにVS CodeでWSL上のプロジェクトを開いた状態のスクリーンショットを挿入 */}
+        {/* 例：public/assets/images/setup/vscode-wsl-project.png */}
+
+6.  **環境変数ファイル `.env` の準備**
+    「あしたぼホームページ」プロジェクトには、APIキーなどの設定を記述する `.env` というファイルが必要です。
+    -   VS Codeのエクスプローラーで、`k_on_line` フォルダの直下に `.env` という名前のファイルを新規作成します。
+    -   `.env` ファイルの具体的な内容は、プロジェクトの管理者（わたべさんなど）に確認し、指示に従って記述してください。通常、テンプレートとなる `.env.example` や `.env.template` といったファイルがプロジェクト内にあれば、それをコピーして `.env` を作成し、必要な箇所を編集します。
+    `../k_on_line` プロジェクトには `.env.prod` と `.env.test` があるので、開発用には `.env` を作成し、内容は `.env.prod` を参考にしつつ、開発用の設定（データベース接続情報など）を記述する必要があるでしょう。詳細はプロジェクト管理者に確認してください。
+
+</Steps>
+
+## プロジェクトの実行 (Docker Compose と Makefile)
+
+<Aside type="caution">
+プロジェクトを実行する前に、**Docker Desktopが起動していること**を必ず確認してください。
+</Aside>
+
+「あしたぼホームページ」プロジェクトでは、Dockerコンテナの起動や停止を簡単に行うための `Makefile` が用意されています。VS Codeのターミナル（WSLのUbuntu環境で開かれていること）で以下のコマンドを実行します。
+
+<Steps>
+1.  **初回ビルドと起動**
+    初めてプロジェクトを実行する場合や、`Dockerfile` に変更があった場合は、以下のコマンドでDockerイメージをビルドし、コンテナを起動します。
+    ```bash
+    make new
+    ```
+    このコマンドは、依存関係のインストールやイメージのビルドを行うため、初回は時間がかかることがあります。
+    ビルドが完了したら、続けて以下のコマンドでコンテナをバックグラウンドで起動します。
+    ```bash
+    make up
+    ```
+    {/* ここに `make new` と `make up` 実行中のターミナルのスクリーンショットを挿入 */}
+
+2.  **ブラウザで確認**
+    コンテナが正常に起動したら、Webブラウザを開き、アドレスバーに `http://localhost:3000` と入力してアクセスします。
+    「あしたぼホームページ」が表示されれば成功です！
+    {/* ここに `http://localhost:3000` で表示されたあしたぼホームページのスクリーンショットを挿入 */}
+
+3.  **開発サーバーの停止**
+    開発作業を終了する際は、VS Codeのターミナルで以下のコマンドを実行します。
+    ```bash
+    make down
+    ```
+    これにより、起動しているDockerコンテナが停止・削除されます。
+
+4.  **再起動**
+    再度開発を開始する場合は、Docker Desktopを起動し、VS Codeのターミナルで以下のコマンドを実行します。
+    ```bash
+    make up
+    ```
+    (`make new` は、`Dockerfile` や依存関係に変更がない限り、毎回実行する必要はありません。)
+
+5.  **イメージの再ビルドを伴う再起動**
+    `package.json` の依存関係を変更した場合など、Dockerイメージの再ビルドが必要な場合は、以下のコマンドを使用します。
+    ```bash
+    make renew
+    ```
+
+</Steps>
+
+<Aside type="tip">
+`Makefile` には他にも便利なコマンドが定義されていることがあります。`make help` と実行すると、利用可能なコマンドの一覧が表示される場合があります（プロジェクトによります）。
+`../k_on_line/Makefile` を見ると、`logs` (ログ表示), `status` (状態確認), `clean` (データ削除) などのコマンドもあるようです。
+</Aside>
+
+これで、Dockerを使った「あしたぼホームページ」の開発環境のセットアップと基本的な操作は完了です。
+もしエラーが発生した場合は、ターミナルに出力されるエラーメッセージをよく読み、それでも解決しない場合は周りの経験者に相談しましょう。

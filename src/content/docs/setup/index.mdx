@@ -1,0 +1,46 @@
+---
+title: 開発スタート⚡
+description: あしたぼホームページの開発を始めるための環境構築手順です。
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+さあ、いよいよ「あしたぼホームページ」の開発を始める準備をしましょう！
+ここでは、あなたのパソコンで開発を進めるために必要な環境を整える方法を説明します。
+
+開発環境の構築方法はいくつかありますが、主に以下の3つの方法を紹介します。
+それぞれの特徴を読んで、自分に合った方法を選んでみてください。
+
+<CardGrid>
+  <LinkCard
+    title="Node.jsで環境構築 (Linux / WSL)"
+    description="Linux環境や、WindowsのWSL (Windows Subsystem for Linux) を使っている方向けの方法です。"
+    href="/setup/node-linux"
+  />
+  <LinkCard
+    title="Node.jsで環境構築 (Windows)"
+    description="Windowsに直接Node.jsをインストールして開発環境を構築する方法です。"
+    href="/setup/node-windows"
+  />
+  <LinkCard
+    title="Dockerで環境構築"
+    description="Dockerという技術を使って、より手軽に、かつ他の環境と隔離された開発環境を構築する方法です。OSを問わず利用できますが、WSL上での利用を推奨します。"
+    href="/setup/docker"
+  />
+</CardGrid>
+
+## どの方法を選べばいいの？
+
+- **プログラミングが初めての方、手軽に始めたい方**:
+    - Windowsをお使いなら「Node.jsで環境構築 (Windows)」
+    - Linuxをお使いなら「Node.jsで環境構築 (Linux / WSL)」
+    - Dockerに興味がある、または将来的に他のプロジェクトでもDockerを使うかもしれない方は「Dockerで環境構築」も良い選択です。
+
+- **既に他の開発でNode.jsを使っている方**:
+    - お使いのOSに合わせてNode.jsの環境構築方法を選んでください。
+
+- **PC環境を汚したくない、複数のプロジェクトで異なるバージョンのNode.jsを使いたい方**:
+    - 「Dockerで環境構築」がおすすめです。
+
+もし迷ったら、まずは「Node.jsで環境構築 (Windows)」または「Node.jsで環境構築 (Linux / WSL)」から試してみるのが良いでしょう。
+途中で分からなくなったり、うまくいかなかったりした場合は、遠慮なく質問してくださいね。

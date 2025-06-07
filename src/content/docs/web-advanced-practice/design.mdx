@@ -1,0 +1,187 @@
+---
+title: 応用デザイン開発 (インタラクティブUIとアクセシビリティ改善)
+description: 「あしたぼホームページ」の既存コンポーネントを題材に、インタラクティブなアニメーション追加やアクセシビリティ向上に挑戦します。
+---
+
+import { Aside, Steps, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+このページでは、「Web開発応用編（座学）」で学んだTailwind CSSの高度なテクニックやアクセシビリティの知識を活かして、「あしたぼホームページ」の既存のUIコンポーネントやページに対して、よりインタラクティブで、かつ誰にとっても使いやすい改善を施す課題に挑戦します。
+
+**挑戦するテーマ例:**
+1.  **既存コンポーネントへのインタラクション追加**: 例えば、ナビゲーションメニューのリンクに、より洗練されたホバーエフェクトやアクティブ状態の視覚的フィードバックを追加する。
+2.  **アクセシビリティの強化**: 既存のフォーム要素やモーダルダイアログなどが、キーボード操作やスクリーンリーダーで問題なく利用できるように改善する。
+3.  **Tailwind CSSプラグインの活用**: `@tailwindcss/typography` を導入し、Markdownで記述された記事ページの見た目を向上させる。
+
+{/* ここに「改善前後のUI比較イメージ図」や「アクセシビリティ改善ポイントを示す図」を挿入 */}
+
+## CHALLENGE 1: ナビゲーションリンクのインタラクション強化
+
+「あしたぼホームページ」の主要なナビゲーションメニュー（ヘッダーやサイドバーなど）のリンク要素に対して、以下のインタラクションを追加してみましょう。
+
+### 要件
+
+-   マウスホバー時:
+    -   背景色が滑らかに変化する。
+    -   テキストの色が変化する。
+    -   任意で、下線がアニメーション付きで表示される。
+-   アクティブ状態（現在のページを示しているリンク）:
+    -   常に視覚的に区別できるスタイル（例: 太字、異なる背景色、左側にアクセントボーダーなど）を適用する。
+-   フォーカス時:
+    -   キーボード操作でフォーカスが当たった際に、ホバー時と同様か、または明確に区別できるスタイルを適用する。
+
+### 実装のヒント
+
+-   **Tailwind CSS**:
+    -   `hover:`, `focus:`, `active:` (または現在のルートに応じて動的にクラスを付与) バリアントを活用。
+    -   トランジションユーティリティ (`transition-colors`, `duration-*`, `ease-*`) で滑らかな色の変化を実現。
+    -   `group` と `group-hover:` を使うと、親要素のホバーに応じて子要素のスタイルを変えるといった複雑な表現も可能です。
+    -   アクティブ状態の判定は、Next.jsの `usePathname` フックなどを使って現在のURLを取得し、リンクの `href` と比較して動的にクラスを付与します。
+-   **CSS (任意)**:
+    -   複雑な下線アニメーションなどは、Tailwindだけでは難しい場合、カスタムCSSで `::after` 擬似要素などを使うことも検討できます。その場合、Tailwindの `@apply` を使って既存のユーティリティを組み合わせることも可能です。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">NavLink.tsx (改善例の骨子)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```tsx
+  'use client'; // usePathname を使うため
+  import Link from 'next/link';
+  import { usePathname } from 'next/navigation';
+
+  type NavLinkProps = {
+    href: string;
+    children: React.ReactNode;
+  };
+
+  export default function NavLink({ href, children }: NavLinkProps) {
+    const pathname = usePathname();
+    const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+
+    return (
+      <Link
+        href={href}
+        className={`
+          px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ease-in-out
+          group
+          ${
+            isActive
+              ? 'bg-sky-700 text-white shadow-inner' // アクティブ時のスタイル
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white focus:outline-none'
+          }
+        `}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        {children}
+        <span
+          className={`
+            block max-w-0 group-hover:max-w-full transition-all duration-300 h-0.5
+            ${isActive ? 'bg-yellow-400 max-w-full' : 'bg-sky-500'}
+          `}
+        ></span> {/* ホバー/アクティブ時の下線アニメーション例 */}
+      </Link>
+    );
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+## CHALLENGE 2: フォームのアクセシビリティ改善
+
+「あしたぼホームページ」内にある任意のフォーム（例: お問い合わせフォーム、[応用フルスタック開発](/web-advanced-practice/fullstack)で作成したコメント投稿フォームなど）のアクセシビリティを向上させましょう。
+
+### 改善ポイントの例
+
+-   **ラベルと入力要素の関連付け**:
+    -   全ての入力フィールド (`<input>`, `<textarea>`, `<select>`) に対応する `<label>` があり、`for`属性と`id`属性で正しく関連付けられているか確認します。
+    -   `<label>` をクリックした際に対応する入力フィールドにフォーカスが移動するようにします。
+-   **エラーメッセージの伝達**:
+    -   バリデーションエラーが発生した場合、そのエラーメッセージがスクリーンリーダーのユーザーにも明確に伝わるようにします。
+    -   `aria-describedby` を使ってエラーメッセージの要素と入力フィールドを関連付けたり、`aria-invalid="true"` を設定したりします。
+-   **キーボード操作**:
+    -   全てのフォーム要素がTabキーで順番にフォーカスでき、EnterキーやSpaceキーで操作（送信、選択など）できることを確認します。
+    -   カスタムコントロール（例: カスタムチェックボックスやラジオボタン）を使用している場合は特に注意が必要です。
+-   **必須フィールドの明示**:
+    -   必須入力項目には、視覚的に分かる印（例: `*`）だけでなく、スクリーンリーダーにも伝わるように `aria-required="true"` を設定します。
+
+### 実装のヒント
+
+-   [Tailwind CSS (応用編)](/web-advanced/tailwind-advanced)で学んだ `@tailwindcss/forms` プラグインは、基本的なフォームのアクセシビリティを向上させるのに役立ちます。
+-   WAI-ARIAの各属性の役割を理解し、適切に使用します。
+-   実際にキーボードだけでフォームを操作してみたり、スクリーンリーダーで読み上げさせてみたりして、問題点を発見します。
+
+## CHALLENGE 3: `@tailwindcss/typography` プラグインの導入とカスタマイズ
+
+Markdownで記述された記事ページ（例: このドキュメントサイト自体や、あしたぼホームページ内のブログ記事など）の見た目を、`@tailwindcss/typography` プラグインを使って美しく整形し、さらにプロジェクトのデザイントーンに合わせてカスタマイズしてみましょう。
+
+<Steps>
+1.  **プラグインのインストール**
+    ```bash
+    npm install -D @tailwindcss/typography
+    ```
+2.  **`tailwind.config.ts` への追加**
+    ```ts
+    // tailwind.config.ts
+    module.exports = {
+      // ...
+      plugins: [
+        require('@tailwindcss/typography'),
+        // ...他のプラグイン...
+      ],
+    };
+    ```
+3.  **HTML/Markdownへの適用**
+    整形したいMarkdownコンテンツを囲む親要素に `prose` クラスを適用します。
+    ```html
+    <article class="prose lg:prose-xl dark:prose-invert mx-auto">
+      {/* ここにMarkdownから変換されたHTMLコンテンツが入る */}
+    </article>
+    ```
+    -   `prose-sm`, `prose-lg`, `prose-xl` などで基本サイズを調整できます。
+    -   `dark:prose-invert` でダークモード時の配色を反転させます。
+
+4.  **スタイルのカスタマイズ (`tailwind.config.ts`)**
+    `theme.extend.typography` を使って、`prose` クラスが適用するスタイル（見出しの色、リンクの色、引用符のスタイルなど）を細かくカスタマイズできます。
+    ```ts
+    // tailwind.config.ts
+    module.exports = {
+      theme: {
+        extend: {
+          typography: (theme) => ({
+            DEFAULT: { // prose クラスのデフォルトスタイル
+              css: {
+                color: theme('colors.gray.700'),
+                a: {
+                  color: theme('colors.brand-primary'), // カスタムカラーを使用
+                  '&:hover': {
+                    color: theme('colors.brand-secondary'),
+                  },
+                },
+                // ... h1, h2, blockquoteなどのスタイルをカスタマイズ ...
+              },
+            },
+            invert: { // prose-invert (ダークモード用) のスタイル
+              css: {
+                color: theme('colors.gray.300'),
+                // ...
+              },
+            },
+          }),
+        },
+      },
+      // ...
+    };
+    ```
+    詳細は[@tailwindcss/typographyのドキュメント](https://tailwindcss.com/docs/typography-plugin)を参照してください。
+
+</Steps>
+
+## まとめ
+
+応用的なデザイン開発では、単に見た目を整えるだけでなく、ユーザーがどのように操作し、どのように情報を得るかを深く考える必要があります。
+-   インタラクティブな要素は、ユーザーの操作を楽しく、分かりやすくします。
+-   アクセシビリティへの配慮は、より多くの人々があなたの作るWebサイトを快適に利用できるようにするために不可欠です。
+-   Tailwind CSSの高度なカスタマイズ機能やプラグインシステムを理解することで、プロジェクト固有のデザイン要件に柔軟に対応できます。
+
+これらの課題を通じて、より高度なフロントエンド開発スキルを磨き、「あしたぼホームページ」をさらに素晴らしいものにしていきましょう。

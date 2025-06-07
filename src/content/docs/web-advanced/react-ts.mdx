@@ -1,0 +1,373 @@
+---
+title: React + TypeScript (応用編)
+description: カスタムフック、Context API、パフォーマンス最適化など、ReactとTypeScriptをより効果的に使うための応用テクニックを学びます。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+[Reactの基礎](/web/react)と[TypeScriptの基礎](/web/typescript)を学んだ皆さん、おめでとうございます！ これで、型安全なUIコンポーネントを作るための土台はバッチリです。
+このページでは、ReactとTypeScriptを組み合わせることで、さらに堅牢でメンテナンスしやすく、そして再利用性の高いコードを書くための応用的なテクニックや考え方を紹介します。
+
+「あしたぼホームページ」のような少し複雑なアプリケーションを作る際には、ここで紹介するような知識がきっと役立つはずです。
+
+## Propsの型を極める
+
+コンポーネント間でデータをやり取りするPropsは、TypeScriptで型を付けることで非常に安全になります。
+
+### Propsの型定義: `type` vs `interface`
+
+コンポーネントのPropsの型は、`type`エイリアスまたは`interface`で定義できます。どちらを使っても機能的には大きな差はありませんが、一般的にReactのPropsには`type`が使われることが多い傾向にあります。プロジェクトのコーディング規約に従いましょう。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">typeエイリアスでのProps定義</Fragment>
+  <Fragment slot="tab-1-content">
+  ```tsx
+  import React from 'react';
+
+  type GreetingProps = {
+    name: string;
+    messageCount?: number; // オプショナルなProps (あってもなくても良い)
+    children?: React.ReactNode; // 子要素を受け取る場合の型
+    onClickButton: (event: React.MouseEvent<HTMLButtonElement>) => void; // イベントハンドラの型
+  };
+
+  const Greeting: React.FC<GreetingProps> = ({ name, messageCount = 0, children, onClickButton }) => {
+    // React.FC<Props> は関数コンポーネントの型。childrenを暗黙的に含む。
+    // Propsを分割代入し、messageCountにデフォルト値を設定
+    return (
+      <div>
+        <h1>こんにちは、{name}さん！</h1>
+        {messageCount > 0 && <p>未読メッセージが{messageCount}件あります。</p>}
+        {children}
+        <button onClick={onClickButton}>通知</button>
+      </div>
+    );
+  };
+
+  export default Greeting;
+  ```
+  </Fragment>
+  <Fragment slot="tab-2-label">interfaceでのProps定義</Fragment>
+  <Fragment slot="tab-2-content">
+  ```tsx
+  import React, { ReactNode, MouseEvent } from 'react';
+
+  interface UserCardProps {
+    user: {
+      id: number;
+      name: string;
+      avatarUrl?: string;
+    };
+    className?: string;
+    onEdit: (userId: number) => void;
+  }
+
+  function UserCard({ user, className, onEdit }: UserCardProps) {
+    return (
+      <div className={`card ${className || ''}`}>
+        {user.avatarUrl && <img src={user.avatarUrl} alt={user.name} />}
+        <h2>{user.name} (ID: {user.id})</h2>
+        <button onClick={() => onEdit(user.id)}>編集</button>
+      </div>
+    );
+  }
+
+  export default UserCard;
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+**ポイント:**
+-   `React.ReactNode`: 子要素として受け取れるあらゆるもの（文字列、数値、JSX要素、配列など）を表す型。
+-   `React.FC<Props>`: `FunctionComponent`の略で、関数コンポーネントであることを示す型。`children` propを暗黙的に含みますが、明示的に `children?: React.ReactNode` と書く方が分かりやすい場合もあります。
+-   イベントハンドラの型: `React.MouseEvent<HTMLElement>` (マウスクリック)、`React.ChangeEvent<HTMLInputElement>` (input要素の変更) など、イベントの種類と対象要素に応じて適切な型を指定します。
+
+## Stateの型をしっかり管理する
+
+`useState` や `useReducer` といったフックで状態を管理する際も、TypeScriptの型が役立ちます。
+
+### `useState` の型
+
+`useState` は型推論が効くことが多いですが、初期値が `null` や `undefined` の場合や、ユニオン型など複雑な型の場合は明示的に型を指定すると安全です。
+
+```tsx
+'use client';
+import { useState } from 'react';
+
+type User = { id: number; name: string };
+
+function UserProfile() {
+  // 初期値がnullなので、User型またはnull型であることを明示
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // boolean型と推論されるが明示も可
+
+  const fetchUser = () => {
+    setIsLoading(true);
+    // 実際にはAPIからユーザーデータを取得する
+    setTimeout(() => {
+      setUser({ id: 1, name: "あしたぼユーザー" });
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  if (isLoading) return <p>読み込み中...</p>;
+  if (!user) return <button onClick={fetchUser}>ユーザー情報を取得</button>;
+
+  return (
+    <div>
+      <p>ID: {user.id}</p>
+      <p>名前: {user.name}</p>
+    </div>
+  );
+}
+export default UserProfile;
+```
+
+### `useReducer` で複雑な状態を管理
+
+複数の関連する状態や、複雑な状態更新ロジックを持つ場合は、`useReducer` フックが便利です。アクションの型とStateの型を定義することで、より堅牢な状態管理が実現できます。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">カウンター (useReducer版)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```tsx
+  'use client';
+  import { useReducer } from 'react';
+
+  // Stateの型
+  type CounterState = {
+    count: number;
+  };
+
+  // Actionの型 (ユニオン型で複数のアクションを表現)
+  type CounterAction =
+    | { type: 'increment'; payload?: number }
+    | { type: 'decrement'; payload?: number }
+    | { type: 'reset' };
+
+  // 初期状態
+  const initialState: CounterState = { count: 0 };
+
+  // Reducer関数: 現在のStateとActionを受け取り、新しいStateを返す
+  function reducer(state: CounterState, action: CounterAction): CounterState {
+    switch (action.type) {
+      case 'increment':
+        return { count: state.count + (action.payload || 1) };
+      case 'decrement':
+        return { count: state.count - (action.payload || 1) };
+      case 'reset':
+        return initialState;
+      default:
+        throw new Error('Unknown action type');
+    }
+  }
+
+  function CounterWithReducer() {
+    const [state, dispatch] = useReducer(reducer, initialState);
+
+    return (
+      <div>
+        <p>カウント: {state.count}</p>
+        <button onClick={() => dispatch({ type: 'increment' })}>+1</button>
+        <button onClick={() => dispatch({ type: 'increment', payload: 5 })}>+5</button>
+        <button onClick={() => dispatch({ type: 'decrement' })}>-1</button>
+        <button onClick={() => dispatch({ type: 'reset' })}>リセット</button>
+      </div>
+    );
+  }
+  export default CounterWithReducer;
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+## カスタムフック: ロジックの再利用
+
+コンポーネント間で共通して使われるロジック（状態管理、API呼び出し、イベントリスナーの設定など）は、「カスタムフック」として切り出すことで再利用性を高められます。
+カスタムフックは、名前が `use` で始まる関数です。
+
+### ウィンドウサイズを取得するカスタムフックの例
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">useWindowSize.ts</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  'use client'; // windowオブジェクトを使うのでクライアントサイド限定
+  import { useState, useEffect } from 'react';
+
+  type WindowSize = {
+    width: number | undefined;
+    height: number | undefined;
+  };
+
+  function useWindowSize(): WindowSize {
+    const [windowSize, setWindowSize] = useState<WindowSize>({
+      width: undefined,
+      height: undefined,
+    });
+
+    useEffect(() => {
+      function handleResize() {
+        setWindowSize({
+          width: window.innerWidth,
+          height: window.innerHeight,
+        });
+      }
+
+      window.addEventListener('resize', handleResize);
+      handleResize(); // 初期サイズを取得
+
+      return () => window.removeEventListener('resize', handleResize); // クリーンアップ
+    }, []); // 空の依存配列で初回マウント時のみ実行
+
+    return windowSize;
+  }
+
+  export default useWindowSize;
+  ```
+  </Fragment>
+  <Fragment slot="tab-2-label">使い方</Fragment>
+  <Fragment slot="tab-2-content">
+  ```tsx
+  // MyComponent.tsx
+  'use client';
+  import useWindowSize from './useWindowSize'; // パスは適宜調整
+
+  function MyComponent() {
+    const { width, height } = useWindowSize();
+
+    return (
+      <p>
+        ウィンドウ幅: {width}px, 高さ: {height}px
+      </p>
+    );
+  }
+  export default MyComponent;
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+## Context API: Propsのバケツリレーを解消
+
+アプリケーション全体で共有したい状態（例: テーマ設定、ユーザー情報、言語設定など）がある場合、Propsを使って深い階層のコンポーネントまでデータを渡し続けるのは大変です（「Propsのバケツリレー」と呼ばれます）。
+Context APIを使うと、このような状態をコンポーネントツリーのどこからでも簡単に参照・更新できるようになります。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">ThemeContext.tsx</Fragment>
+  <Fragment slot="tab-1-content">
+  ```tsx
+  'use client';
+  import React, { createContext, useState, useContext, ReactNode } from 'react';
+
+  type Theme = 'light' | 'dark';
+  type ThemeContextType = {
+    theme: Theme;
+    toggleTheme: () => void;
+  };
+
+  // Contextオブジェクトを作成 (デフォルト値を指定)
+  const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+  // Context Providerコンポーネント
+  export function ThemeProvider({ children }: { children: ReactNode }) {
+    const [theme, setTheme] = useState<Theme>('light');
+    const toggleTheme = () => {
+      setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
+
+    return (
+      <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        {children}
+      </ThemeContext.Provider>
+    );
+  }
+
+  // Contextを使用するためのカスタムフック
+  export function useTheme() {
+    const context = useContext(ThemeContext);
+    if (context === undefined) {
+      throw new Error('useTheme must be used within a ThemeProvider');
+    }
+    return context;
+  }
+  ```
+  </Fragment>
+  <Fragment slot="tab-2-label">使い方 (AppやLayoutなど)</Fragment>
+  <Fragment slot="tab-2-content">
+  ```tsx
+  // src/app/layout.tsx など、アプリのルートに近い場所
+  import { ThemeProvider, useTheme } from './ThemeContext'; // パスは適宜調整
+
+  function AppLayout({ children }: { children: React.ReactNode }) {
+    // ThemeProviderでラップされた内部のコンポーネントでuseThemeが使える
+    return (
+      <ThemeProvider>
+        <ThemedBody>{children}</ThemedBody>
+      </ThemeProvider>
+    );
+  }
+
+  function ThemedBody({ children }: { children: React.ReactNode }) {
+    const { theme, toggleTheme } = useTheme(); // Contextから値を取得
+    return (
+      <body className={theme === 'dark' ? 'dark-theme' : 'light-theme'}>
+        <button onClick={toggleTheme}>
+          現在のテーマ: {theme} (切り替え)
+        </button>
+        {children}
+      </body>
+    );
+  }
+  export default AppLayout; // 実際にはNext.jsのLayoutとしてexport default
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+## パフォーマンス最適化の基本 (`memo`, `useMemo`, `useCallback`)
+
+Reactは非常に効率的ですが、大規模なアプリケーションでは不要な再レンダリングがパフォーマンスの問題を引き起こすことがあります。
+以下のフックや関数は、そのような場合に役立ちます。
+
+-   **`React.memo(Component)`**:
+    コンポーネントが受け取るPropsが変化しない限り、そのコンポーネントの再レンダリングをスキップします（浅い比較）。
+    ```tsx
+    const MyHeavyComponent = React.memo(function MyHeavyComponent(props) {
+      // propsが変化しない限り再レンダリングされない
+      console.log("MyHeavyComponent rendered");
+      return <div>{/* 重い計算結果など */}</div>;
+    });
+    ```
+-   **`useMemo(() => computeExpensiveValue(a, b), [a, b])`**:
+    コストの高い計算結果をメモ化（記憶）し、依存配列 `[a, b]` の値が変化しない限り再計算を防ぎます。
+    ```tsx
+    const expensiveValue = useMemo(() => {
+      console.log("Calculating expensive value...");
+      return a * b + c; // 何か重い計算
+    }, [a, b, c]); // a, b, c が変わらない限り再計算されない
+    ```
+-   **`useCallback((event) => { ... }, [dependencies])`**:
+    関数自体をメモ化します。これにより、子コンポーネントに渡すコールバック関数が不必要に再生成されるのを防ぎ、`React.memo` と組み合わせると効果的です。
+    ```tsx
+    const handleClick = useCallback(() => {
+      console.log('Button clicked with value:', someValue);
+    }, [someValue]); // someValueが変わらない限り関数は再生成されない
+
+    return <MyButton onClick={handleClick} />; // MyButtonがReact.memoされていると効果的
+    ```
+
+<Aside type="caution">
+これらの最適化手法は、むやみに使うと逆にコードが複雑になったり、わずかなパフォーマンス改善しか得られなかったりすることもあります。まずはReact Developer Toolsのプロファイラなどでボトルネックを特定し、本当に必要な箇所に適用するようにしましょう。
+</Aside>
+
+## まとめ
+
+-   PropsやStateの型をしっかり定義することで、コンポーネントのインターフェースが明確になり、バグが減ります。
+-   カスタムフックを使うと、コンポーネント間でロジックを簡単に再利用できます。
+-   Context APIは、アプリケーション全体で共有したい状態を管理するのに便利です。
+-   `React.memo`, `useMemo`, `useCallback` は、パフォーマンスが問題になる箇所で慎重に使いましょう。
+
+ReactとTypeScriptを組み合わせることで、より洗練された、堅牢なアプリケーション開発が可能になります。
+これらの応用テクニックを理解し、適切に活用することで、「あしたぼホームページ」の品質をさらに高めていきましょう。
+分からないことがあれば、[用語集](/getstart/term)や公式ドキュメント、そしてチームメンバーを頼りにしてください。

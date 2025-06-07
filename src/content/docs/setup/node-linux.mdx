@@ -1,0 +1,94 @@
+---
+title: Node.jsによる環境構築 (Linux / WSL)
+description: Linux環境またはWindows Subsystem for Linux (WSL) を使用して、Node.jsで開発環境を構築する手順を説明します。
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+このページでは、Linux環境、またはWindows上でLinux環境をエミュレートするWSL (Windows Subsystem for Linux) を使って、「あしたぼホームページ」の開発に必要なNode.js環境を構築する方法を説明します。
+
+Node.jsは、ウェブサイトの裏側で動くプログラム（サーバーサイドのJavaScript）を実行したり、開発に必要なツール（例：Next.jsのコマンド）を使ったりするために必要です。
+
+## WSLの準備 (Windowsユーザー向け)
+
+Windowsをお使いで、まだWSLを導入していない場合は、まずWSLをインストールする必要があります。
+WSLを利用すると、Windows上でLinuxのコマンドラインツールやアプリケーションを直接実行できるようになります。
+
+<Steps>
+1.  **PowerShellを管理者として開く**
+    Windowsのスタートメニューで「PowerShell」と検索し、表示された「Windows PowerShell」を右クリックして「管理者として実行」を選択します。
+
+2.  **WSLインストールコマンドの実行**
+    開いたPowerShellのウィンドウに以下のコマンドを入力し、Enterキーを押します。
+    ```powershell
+    wsl --install
+    ```
+    これにより、WSLとデフォルトのLinuxディストリビューション（通常はUbuntu）がインストールされます。
+    {/* ここに `wsl --install` 実行中のイメージ画像を挿入 */}
+
+3.  **PCの再起動**
+    インストールが完了したら、PCを再起動してください。
+
+4.  **Linuxユーザーのセットアップ**
+    再起動後、Ubuntuのターミナルが自動的に開きます（開かない場合はスタートメニューから「Ubuntu」を探して起動）。
+    ここで、Linux環境で使用する新しいユーザー名とパスワードを設定します。
+    {/* ここにUbuntu初回起動時のユーザー名・パスワード設定画面の画像を挿入 */}
+
+</Steps>
+
+これでWSLの基本的な準備は完了です。詳細な手順やトラブルシューティングは、[Microsoft公式ドキュメント](https://learn.microsoft.com/ja-jp/windows/wsl/install)を参照してください。
+
+## Node.jsのインストール (nvmを利用)
+
+Node.jsをインストールするには、バージョン管理ツールである `nvm` (Node Version Manager) を使うのがおすすめです。
+`nvm` を使うと、プロジェクトごとに異なるバージョンのNode.jsを簡単に切り替えて使うことができます。
+
+<Steps>
+1.  **ターミナルを開く**
+    Linux環境の場合は通常のターミナルを、WSLの場合はUbuntuのターミナルを開きます。
+
+2.  **nvmのインストール**
+    以下のコマンドをターミナルに貼り付けて実行します。これはnvmのインストールスクリプトをダウンロードして実行するものです。
+    ```bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    ```
+    {/* ここにnvmインストールコマンド実行中のイメージ画像を挿入 */}
+    バージョン番号 `v0.39.7` は、執筆時点での最新版の一つです。より新しいバージョンがある場合は、[nvmのGitHubリポジトリ](https://github.com/nvm-sh/nvm)で確認して置き換えてください。
+
+3.  **ターミナルの再起動**
+    インストール後、一度ターミナルを閉じて再度開くか、以下のコマンドを実行して設定を読み込みます。
+    ```bash
+    source ~/.bashrc
+    ```
+    または `source ~/.zshrc` (Zshをお使いの場合)
+
+4.  **nvmのインストール確認**
+    以下のコマンドを実行して、nvmが正しくインストールされたか確認します。
+    ```bash
+    nvm --version
+    ```
+    バージョン番号が表示されれば成功です。
+
+5.  **Node.js (LTS版) のインストール**
+    nvmを使って、推奨されているLTS (Long Term Support) 版のNode.jsをインストールします。
+    ```bash
+    nvm install --lts
+    ```
+    {/* ここに `nvm install --lts` 実行中のイメージ画像を挿入 */}
+    これにより、安定版のNode.jsがインストールされ、デフォルトで使用するバージョンとして設定されます。
+
+6.  **Node.jsとnpmのバージョン確認**
+    インストールが完了したら、以下のコマンドでNode.jsと、Node.jsと一緒にインストールされるnpm (Node Package Manager) のバージョンを確認します。
+    ```bash
+    node -v
+    npm -v
+    ```
+    それぞれのバージョン番号が表示されれば、Node.jsの環境構築は完了です！
+    {/* ここに `node -v` と `npm -v` の実行結果イメージ画像を挿入 */}
+
+</Steps>
+
+これで、LinuxまたはWSL上に「あしたぼホームページ」を開発するためのNode.js環境が整いました。
+次は、[GitとGitHubの準備](/git/)に進み、プロジェクトのソースコードを手元に持ってくる準備をしましょう。
+
+もし途中でエラーが出たり、うまくいかない場合は、表示されたエラーメッセージをよく読んでみてください。それでも解決しない場合は、遠慮なく周りの経験者に質問しましょう。

@@ -1,0 +1,260 @@
+---
+title: PostgreSQL & Prismaの基礎
+description: 高機能リレーショナルデータベースPostgreSQLと、TypeScript/JavaScriptから安全かつ簡単に操作するためのORMであるPrismaの基本を学びます。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+Webアプリケーションを作る上で、ユーザー情報、投稿データ、予約情報など、様々なデータを永続的に保存し、効率的に管理する必要が出てきます。そのための仕組みが「データベース」です。
+「あしたぼホームページ」では、信頼性の高いリレーショナルデータベースである **PostgreSQL**（ポストグレスキューエル、通称「ポスグレ」）を使用しています。
+
+そして、このPostgreSQLと私たちのNext.js/TypeScriptアプリケーションを繋ぎ、データベース操作を簡単かつ安全に行えるようにしてくれるのが **Prisma** というツール（ORM: Object-Relational Mapper）です。
+
+このページでは、PostgreSQLとPrismaの基本的な概念と使い方を学び、あしたぼホームページのデータがどのように扱われているのか理解を深めましょう。
+
+{/* ここに「アプリケーション、Prisma、PostgreSQLデータベースが連携するイメージ図」を挿入 */}
+
+## PostgreSQLとは？
+
+PostgreSQLは、オープンソースで開発されている非常に高機能で信頼性の高いリレーショナルデータベース管理システム（RDBMS）です。
+-   **リレーショナルデータベース**: Excelの表のように、行と列で構成されるテーブル形式でデータを管理します。テーブル同士を関連付ける（リレーション）ことで、複雑なデータ構造も表現できます。
+-   **特徴**: ACID特性（トランザクションの信頼性保証）、豊富なデータ型、高度な検索機能、高い拡張性など、エンタープライズレベルの要求にも応えられる堅牢なデータベースです。
+-   **あしたぼホームページでの利用**: ユーザーアカウント情報、予約データ、ブログ記事など、様々な情報がPostgreSQLに保存されています。開発環境では、Docker Composeを使ってPostgreSQLサーバーを起動しています（詳細は[Dockerによる環境構築](/setup/docker)を参照）。
+
+## Prismaとは？ 次世代のORM
+
+Prismaは、Node.jsおよびTypeScriptアプリケーションからデータベースを操作するためのモダンなORM（Object-Relational Mapper）です。
+
+**ORMって何？**
+ORMは、プログラミング言語のオブジェクト（例: TypeScriptのクラスやオブジェクト）と、リレーショナルデータベースのテーブル構造を対応付け（マッピング）し、SQLを直接書かなくてもデータベース操作を行えるようにするツールです。
+
+**Prismaの主な特徴と利点:**
+-   **型安全なデータベースアクセス**: Prisma Clientは、あなたのPrismaスキーマに基づいてTypeScriptの型を自動生成します。これにより、存在しないフィールドにアクセスしようとしたり、間違った型のデータを保存しようとしたりすると、コードを書いている段階でエラーとして検知できます。
+-   **直感的なAPI**: Prisma ClientのAPIは非常に分かりやすく、SQLの知識が浅くても直感的にデータベース操作が書けます。
+-   **マイグレーションシステム**: データベースのスキーマ（テーブル構造など）の変更を安全かつ簡単に管理できます。変更履歴も残ります。
+-   **Prisma Studio**: GUIでデータベースの内容を簡単に確認・編集できるツールが付属しています。
+
+### Prismaの主要コンポーネント
+
+1.  **Prismaスキーマ (`prisma/schema.prisma`)**:
+    データベースのモデル（テーブル定義）、データソース（どのデータベースに接続するか）、ジェネレータ（Prisma Clientを生成する設定など）を定義するファイルです。これがPrismaの中心的な設定ファイルとなります。
+2.  **Prisma Client**:
+    Prismaスキーマから自動生成される、型安全なデータベースアクセスクライアントです。アプリケーションコードからこれをインポートして使います。
+3.  **Prisma Migrate**:
+    Prismaスキーマの変更に基づいて、データベースのスキーマを更新（マイグレーション）するためのツールです。SQLのマイグレーションファイルを自動生成し、適用してくれます。
+
+## Prismaのセットアップと基本的なワークフロー
+
+<Steps>
+1.  **Prismaのインストール** (通常はプロジェクトに既にセットアップ済み)
+    ```bash
+    npm install prisma --save-dev
+    npm install @prisma/client
+    npx prisma init --datasource-provider postgresql # 初回セットアップ時
+    ```
+    `prisma init` を実行すると、`prisma` ディレクトリと `schema.prisma` ファイル、そして `.env` ファイル（`DATABASE_URL` を記述）が作成されます。
+
+2.  **`DATABASE_URL` の設定**
+    `.env` ファイルに、PostgreSQLデータベースへの接続文字列を設定します。
+    ```env
+    # .env
+    DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+    ```
+    （ユーザー名、パスワード、ホスト、ポート、データベース名は実際の環境に合わせてください。Docker環境では `docker-compose.yml` の設定と対応します。）
+
+3.  **Prismaスキーマの定義 (`prisma/schema.prisma`)**
+    データベースに作成したいテーブルの構造をモデルとして定義します。
+    ```prisma
+    // prisma/schema.prisma
+    datasource db {
+      provider = "postgresql"
+      url      = env("DATABASE_URL")
+    }
+
+    generator client {
+      provider = "prisma-client-js"
+    }
+
+    model User {
+      id        Int      @id @default(autoincrement())
+      email     String   @unique
+      name      String?  // ? はオプショナル (null許容)
+      posts     Post[]   // Userは複数のPostを持つ (1対多リレーション)
+      createdAt DateTime @default(now())
+    }
+
+    model Post {
+      id        Int      @id @default(autoincrement())
+      title     String
+      content   String?
+      published Boolean  @default(false)
+      author    User     @relation(fields: [authorId], references: [id]) // Userモデルと関連付け
+      authorId  Int      // 外部キー
+      createdAt DateTime @default(now())
+      updatedAt DateTime @updatedAt
+    }
+    ```
+    **主なフィールド属性:**
+    -   `@id`: 主キーであることを示す。
+    -   `@default(autoincrement())`: 自動採番の整数。
+    -   `@unique`: そのフィールドの値が一意であることを保証。
+    -   `String?`: `?` はオプショナル（`NULL`を許容する）フィールド。
+    -   `Post[]`: `Post`モデルの配列。1対多リレーションを示す。
+    -   `@relation`: モデル間のリレーションを定義。
+    -   `@default(now())`: デフォルト値を現在の日時に。
+    -   `@updatedAt`: レコード更新時に自動で日時を更新。
+
+4.  **マイグレーションの実行 (`prisma migrate dev`)**
+    スキーマ定義に基づいてデータベースの構造を変更（または新規作成）します。
+    ```bash
+    npx prisma migrate dev --name create-user-post-tables
+    ```
+    このコマンドは、SQLマイグレーションファイルを生成し、それをデータベースに適用します。`--name` でマイグレーションに名前を付けます。
+
+5.  **Prisma Clientの生成 (`prisma generate`)**
+    最新のスキーマ定義に基づいて、型安全なPrisma Clientを生成（または更新）します。
+    ```bash
+    npx prisma generate
+    ```
+    このコマンドは、スキーマを変更したり、`@prisma/client` をインストール/更新したりした後に実行する必要があります。
+
+</Steps>
+
+## Prisma Clientを使ったCRUD操作
+
+生成されたPrisma Clientを使って、アプリケーションコードからデータベースを操作します。
+
+```typescript
+// lib/prisma.ts (PrismaClientのインスタンスをシングルトンで管理する例)
+import { PrismaClient } from '@prisma/client';
+
+let prisma: PrismaClient;
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient();
+} else {
+  // 開発環境では、ホットリロードでPrismaClientのインスタンスが増えすぎないようにする
+  if (!global.prisma) {
+    global.prisma = new PrismaClient();
+  }
+  prisma = global.prisma;
+}
+
+export default prisma;
+```
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">データ作成 (Create)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  // pages/api/users.ts (Next.js APIルートの例)
+  import prisma from '@/lib/prisma';
+
+  async function createUser() {
+    const newUser = await prisma.user.create({
+      data: {
+        email: 'alice@example.com',
+        name: 'Alice',
+        posts: {
+          create: [
+            { title: '初めての投稿', content: 'こんにちは！' },
+            { title: 'Prismaは便利', published: true },
+          ],
+        },
+      },
+      include: { // 作成と同時にリレーション先のデータも取得
+        posts: true,
+      },
+    });
+    console.log(newUser);
+  }
+  ```
+  </Fragment>
+  <Fragment slot="tab-2-label">データ取得 (Read)</Fragment>
+  <Fragment slot="tab-2-content">
+  ```ts
+  import prisma from '@/lib/prisma';
+
+  async function getUsers() {
+    // 全ユーザー取得
+    const allUsers = await prisma.user.findMany({
+      include: { posts: true }, // 関連するPostも取得
+    });
+
+    // 特定のユーザー取得 (emailで検索)
+    const specificUser = await prisma.user.findUnique({
+      where: { email: 'alice@example.com' },
+    });
+
+    // 条件に一致するPostを検索
+    const publishedPosts = await prisma.post.findMany({
+      where: { published: true },
+      orderBy: { createdAt: 'desc' }, // 作成日時の降順
+      take: 10, // 最大10件
+    });
+  }
+  ```
+  </Fragment>
+  <Fragment slot="tab-3-label">データ更新 (Update)</Fragment>
+  <Fragment slot="tab-3-content">
+  ```ts
+  import prisma from '@/lib/prisma';
+
+  async function updateUser(userId: number) {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { name: 'Alice Wonderland' },
+    });
+  }
+
+  async function publishPost(postId: number) {
+    const updatedPost = await prisma.post.update({
+      where: { id: postId },
+      data: { published: true },
+    });
+  }
+  ```
+  </Fragment>
+  <Fragment slot="tab-4-label">データ削除 (Delete)</Fragment>
+  <Fragment slot="tab-4-content">
+  ```ts
+  import prisma from '@/lib/prisma';
+
+  async function deleteUser(userId: number) {
+    // 関連するPostも一緒に削除する場合 (スキーマでカスケード削除設定が必要な場合もある)
+    // await prisma.post.deleteMany({ where: { authorId: userId } });
+    const deletedUser = await prisma.user.delete({
+      where: { id: userId },
+    });
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+## Prisma Studio: GUIでデータを見る
+
+Prismaには、データベースの内容をブラウザベースのGUIで簡単に確認・編集できる「Prisma Studio」というツールが付属しています。
+ターミナルで以下のコマンドを実行すると起動します。
+```bash
+npx prisma studio
+```
+ブラウザで `http://localhost:5555` を開くと、定義したモデルの一覧が表示され、各テーブルのデータを閲覧したり、新しいレコードを追加したりできます。開発中のデータ確認やデバッグに非常に便利です。
+
+{/* ここに「Prisma Studioの画面キャプチャ」を挿入 */}
+
+## まとめ
+
+-   **PostgreSQL**は高機能で信頼性の高いリレーショナルデータベースです。
+-   **Prisma**は、TypeScript/JavaScriptからPostgreSQL（や他のデータベース）を型安全かつ直感的に操作できるORMです。
+-   **`prisma/schema.prisma`** でデータベースのモデルを定義します。
+-   **`prisma migrate dev`** でスキーマの変更をデータベースに適用します。
+-   **`prisma generate`** で型安全なPrisma Clientを生成します。
+-   生成された**Prisma Client**を使って、CRUD操作（作成、読み取り、更新、削除）を行います。
+-   **Prisma Studio** (`npx prisma studio`) でデータベースの内容をGUIで確認できます。
+
+Prismaを使うことで、SQLを直接書く手間を大幅に減らし、型システムの恩恵を受けながら安全にデータベースを操作できます。
+「あしたぼホームページ」のバックエンド処理の多くは、このPrismaを通じてPostgreSQLとやり取りしています。
+より詳しい使い方や高度な機能については、[Prismaの公式ドキュメント](https://www.prisma.io/docs/)を参照してください。

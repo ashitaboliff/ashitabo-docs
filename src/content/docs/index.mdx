@@ -1,28 +1,78 @@
 ---
-title: あしたぼホームページ開発ドキュメント
-description: Next.js と TypeScript の使い方から実際のコンポーネントまで
+title: あしたぼホームページ 開発ドキュメント
+description: Next.js と TypeScript で作られた「あしたぼホームページ」の開発を始めるためのガイドです。
 template: splash
 hero:
-  tagline: 現在このページ開発中♡
+  title: あしたぼホームページ開発ドキュメントへようこそ！
+  tagline: このドキュメントは、あしたぼホームページの未来を一緒に作るあなたのための羅針盤です。
   image:
     file: ../../assets/main.png
   actions:
-    - text: Dockerのインストールから始める
-      link: /setup/docker
+    - text: はじめに (まずはこちらから！)
+      link: /getstart/はじめに
       icon: right-arrow
-    # - text: node.jsのインストールから始める
-    #   link: /setup/design
-    #   icon: right-arrow
-layout: '@/layouts/layout.astro'
+      variant: primary
+    - text: 開発環境を整える
+      link: /setup/
+      icon: external
+    - text: 用語集を見る
+      link: /getstart/term
+      icon: open-book
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-## あしたぼホームページ開発ドキュメントにようこそ
+このドキュメントは、モダンな技術スタック（Next.js 15, TypeScript, Tailwind CSSなど）で構築された「あしたぼホームページ」の開発に参加したいと考えているすべての方を対象としています。
 
-このドキュメントはVS Codeの拡張機能から **useEfectは使うな** という話まで、なにも知らないお前たちに向けて100分の2くらい知っているわたべが情報をお届けするためのドキュメントサイトです。来てくれてありがとう本当に
+Web開発やプログラミングの経験がない方でもスムーズに開発を始められるよう、基本的な知識から丁寧に解説しています。経験者の方にとっては、プロジェクト固有のルールや設計思想を理解するための一助となれば幸いです。
 
-<Card title="Contact" icon="pencil">
-	<p>このドキュメントに関する質問やフィードバックは、<a href="https://watabegg.github.io/contact">watabegg</a>までお知らせください。</p>
+## ドキュメントの構成
+
+このドキュメントは、以下の主要なセクションで構成されています。
+
+<CardGrid stagger>
+	<LinkCard
+		title="はじめに"
+		description="このドキュメントを読む上での心構えや、あしたぼホームページの概要について説明します。"
+		href="/getstart/はじめに"
+	/>
+	<LinkCard
+		title="開発スタート⚡"
+		description="実際に開発を始めるための環境構築手順を解説します。あなたに合った方法を選びましょう。"
+		href="/setup/"
+	/>
+	<LinkCard
+		title="Git, GitHub"
+		description="チーム開発に不可欠なバージョン管理ツールGitと、そのホスティングサービスGitHubの使い方を学びます。"
+		href="/git/"
+	/>
+	<LinkCard
+		title="Web開発の基礎(座学編)"
+		description="TypeScript, React, Next.js, Tailwind CSSといった、あしたぼホームページで使われている技術の基礎を学びます。"
+		href="/web/"
+	/>
+  <LinkCard
+		title="Web開発実践編"
+		description="基礎知識を元に、実際に手を動かして開発を進める方法を学びます。"
+		href="/web-practice/"
+	/>
+  <LinkCard
+		title="Web開発応用編"
+		description="より高度なトピックや、特定の機能開発に必要な知識を深めます。"
+		href="/web-advanced/"
+	/>
+  <LinkCard
+    title="Web開発応用実践編"
+    description="応用的な知識を活かして、より複雑な機能開発に挑戦します。"
+    href="/web-advanced-practice/"
+  />
+</CardGrid>
+
+## このドキュメントについて
+
+このドキュメントは、あしたぼホームページの継続的な開発と技術継承を目的として作成されています。
+分かりにくい点や改善点などがありましたら、お気軽にフィードバックをお寄せください。
+
+<Card title="お問い合わせ" icon="email">
+	このドキュメントに関するご質問やフィードバックは、<a href="https://watabegg.github.io/contact" target="_blank" rel="noopener noreferrer">開発者（わたべ）</a>までお気軽にお知らせください。
 </Card>
-

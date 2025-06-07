@@ -1,0 +1,214 @@
+---
+title: デザイン開発体験 (UI改善とコンポーネント作成)
+description: Tailwind CSSとdaisyUIを使って、既存ページのデザイン改善や新しいUIコンポーネント作成を体験します。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+Webサイトの「見た目」や「使いやすさ」は、ユーザーがそのサイトを好きになってくれるか、快適に使ってくれるかに大きく影響します。このページでは、「あしたぼホームページ」のデザインをより良くするために、実際に手を動かしてデザイン改善や新しいUI部品（コンポーネント）の作成に挑戦します。
+
+**今回挑戦すること:**
+1.  **既存ページのデザイン改善**: 例えば、[フルスタック開発体験](/web-practice/fullstack)で作成した「お知らせ一覧ページ」をもっと見やすく、使いやすくしてみましょう。
+2.  **新しいUIコンポーネントの作成**: 例えば、ユーザーのプロフィール情報を表示する「プロフィールカード」のような部品を作ってみましょう。
+
+**使う主な技術:**
+-   **Tailwind CSS**: HTMLに直接スタイルを指定できる便利な道具。
+-   **daisyUI**: Tailwind CSSをさらに使いやすくする部品セット。
+-   **React**: UI部品を作るためのJavaScriptライブラリ。
+-   **Figma (任意)**: デザイン案を考えたり、共有したりするのに便利なツール。
+
+{/* ここに「デザイン改善前後の比較イメージ図」や「作成する新しいコンポーネントのイメージ図」を挿入 */}
+
+## CHALLENGE 1: お知らせ一覧ページのデザイン改善
+
+[フルスタック開発体験](/web-practice/fullstack)で作ったお知らせ一覧ページ (`app/announcements/page.tsx`) は、まだシンプルなリスト表示でした。これを、Tailwind CSSとdaisyUIを使って、よりモダンで見やすいカード形式のデザインに改善してみましょう。
+
+<Steps>
+1.  **現状のデザインを確認**
+    まずは現在の `app/announcements/page.tsx` の見た目とコードを確認し、どこを改善したいか考えてみましょう。
+    -   情報が詰まっていて見づらい？
+    -   もっと各お知らせが区別しやすいようにしたい？
+    -   スマホで見たときも綺麗に表示される？
+
+2.  **改善案を考える (Figmaなどを使うとGood!)**
+    -   各お知らせを「カード」コンポーネントで表示する。
+    -   タイトル、作成日、内容の一部をカード内に配置する。
+    -   マウスオーバーで少し浮き上がるようなエフェクトを付ける。
+    -   レスポンシブ対応：画面幅に応じてカードの列数を変える（例: PCでは3列、スマホでは1列）。
+
+3.  **Tailwind CSSとdaisyUIで実装**
+    `app/announcements/page.tsx` の `map` でお知らせをリスト表示している部分を修正します。
+
+    <CodePreviewTabs>
+      <Fragment slot="tab-1-label">改善前のイメージ (一部抜粋)</Fragment>
+      <Fragment slot="tab-1-content">
+      ```tsx
+      // ...
+      <ul>
+        {announcements.map((announcement: any) => (
+          <li key={announcement.id} className="mb-2 border p-2 rounded">
+            <Link href={`/announcements/${announcement.id}`}>
+              <h2 className="text-xl font-bold">{announcement.title}</h2>
+            </Link>
+            <p className="text-sm text-gray-500">
+              {new Date(announcement.createdAt).toLocaleDateString()}
+            </p>
+          </li>
+        ))}
+      </ul>
+      // ...
+      ```
+      </Fragment>
+      <Fragment slot="tab-2-label">改善後のイメージ (daisyUIのCard使用)</Fragment>
+      <Fragment slot="tab-2-content">
+      ```tsx
+      // app/announcements/page.tsx (map部分の変更例)
+      // ...
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {announcements.map((announcement: any) => (
+          <div key={announcement.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="card-body">
+              <h2 className="card-title">
+                <Link href={`/announcements/${announcement.id}`} className="link link-hover">
+                  {announcement.title}
+                </Link>
+              </h2>
+              <p className="text-xs text-gray-500 mb-2">
+                {new Date(announcement.createdAt).toLocaleDateString()}
+              </p>
+              <p className="text-sm line-clamp-3"> {/* 内容を3行で省略表示 */}
+                {announcement.content}
+              </p>
+              <div className="card-actions justify-end mt-2">
+                <Link href={`/announcements/${announcement.id}`} className="btn btn-sm btn-outline btn-primary">
+                  続きを読む
+                </Link>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      // ...
+      ```
+      </Fragment>
+    </CodePreviewTabs>
+    **ポイント:**
+    -   `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`: レスポンシブなグリッドレイアウト。
+    -   `card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow`: daisyUIのカードコンポーネントとTailwindのユーティリティクラスで見た目を調整。
+    -   `card-body`, `card-title`, `card-actions`: daisyUIのカード内部構造クラス。
+    -   `line-clamp-3`: Tailwind CSS Typographyプラグイン（またはカスタムCSS）で複数行のテキストを省略表示するクラス（要設定）。もしなければ、`overflow-hidden text-ellipsis h-20` のように高さ固定で対応も可。
+
+4.  **動作確認**
+    ブラウザで表示を確認し、意図した通りにデザインが変更されているか、レスポンシブ対応が機能しているかなどをチェックします。
+    開発者ツール（F12キー）のインスペクタで、各要素にどんなスタイルが当たっているか確認しながら微調整しましょう。
+
+</Steps>
+
+## CHALLENGE 2: 新しいUIコンポーネント「プロフィールカード」の作成
+
+次に、ユーザーの簡単なプロフィール情報を表示するための再利用可能な「プロフィールカード」コンポーネントを `src/components/ProfileCard.tsx` として作成してみましょう。
+
+<Steps>
+1.  **コンポーネントの要件定義**
+    -   表示する情報: ユーザー名、アイコン画像、自己紹介文、SNSリンク（任意）。
+    -   Propsでこれらの情報を受け取れるようにする。
+
+2.  **`src/components/ProfileCard.tsx` を作成**
+    ```tsx
+    // src/components/ProfileCard.tsx
+    'use client'; // 必要に応じて (インタラクションがなければ不要)
+
+    import Image from 'next/image'; // Next.jsのImageコンポーネントを使用
+    import Link from 'next/link';   // Next.jsのLinkコンポーネント
+
+    // Propsの型定義
+    type ProfileCardProps = {
+      userName: string;
+      avatarUrl: string; // アイコン画像のURL
+      bio: string;
+      socialLinks?: {
+        twitter?: string;
+        github?: string;
+      };
+    };
+
+    export default function ProfileCard({ userName, avatarUrl, bio, socialLinks }: ProfileCardProps) {
+      return (
+        <div className="card w-96 bg-base-200 shadow-xl my-4"> {/* daisyUIのカード */}
+          <figure className="px-10 pt-10">
+            <Image
+              src={avatarUrl}
+              alt={`${userName}のアイコン`}
+              width={128} // Imageコンポーネントにはwidthとheightが必須
+              height={128}
+              className="rounded-full w-32 h-32 object-cover" // Tailwindでスタイル調整
+            />
+          </figure>
+          <div className="card-body items-center text-center">
+            <h2 className="card-title text-2xl font-bold">{userName}</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 my-2">{bio}</p>
+            <div className="card-actions">
+              {socialLinks?.twitter && (
+                <Link href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-info">
+                  Twitter
+                  {/* ここにTwitterアイコンなどを入れると良い (例: React Icons) */}
+                </Link>
+              )}
+              {socialLinks?.github && (
+                <Link href={socialLinks.github} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-neutral">
+                  GitHub
+                  {/* ここにGitHubアイコンなどを入れると良い */}
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    ```
+
+3.  **作成したコンポーネントを使ってみる**
+    例えば、どこかのページ (`app/some-page/page.tsx` など) でこのコンポーネントをインポートして使ってみましょう。
+    ```tsx
+    // app/some-page/page.tsx
+    import ProfileCard from '@/components/ProfileCard'; // パスは適宜調整
+
+    export default function SomePage() {
+      const user1 = {
+        userName: "あしたぼ 太郎",
+        avatarUrl: "/images/default-avatar.png", // public/images/default-avatar.png などに配置
+        bio: "ReactとNext.jsが好きです。趣味は散歩。",
+        socialLinks: {
+          twitter: "https://twitter.com/ashitabo",
+          github: "https://github.com/watabegg" // ユーザーのリポジトリに合わせて
+        }
+      };
+
+      return (
+        <div className="flex justify-center items-center min-h-screen">
+          <ProfileCard {...user1} />
+          {/* 他のユーザーのカードも表示可能 */}
+        </div>
+      );
+    }
+    ```
+    {/* ここに「ProfileCardコンポーネントが表示されているイメージ図」を挿入 */}
+
+4.  **スタイルの調整**
+    Tailwind CSSのクラスを追加・変更したり、daisyUIのテーマ設定 (`tailwind.config.ts` の `daisyui.themes`) を調整したりして、好みのデザインに仕上げていきましょう。
+
+</Steps>
+
+## まとめ
+
+-   デザイン開発では、まず「何をどう見せたいか」を考えることが大切です。
+-   Tailwind CSSのユーティリティクラスとdaisyUIのコンポーネントクラスを組み合わせることで、効率的に見栄えの良いUIを構築できます。
+-   Reactコンポーネントとして部品化することで、再利用性が高まり、管理もしやすくなります。
+-   ブラウザの開発者ツールは、デザイン調整の強力な味方です。
+
+デザインは奥が深く、試行錯誤の連続ですが、それもまた開発の楽しみの一つです。
+色々なサイトのデザインを参考にしたり、Figmaなどのツールでアイデアを形にしたりしながら、ユーザーにとって魅力的で使いやすい「あしたぼホームページ」を一緒に作っていきましょう！
+分からないことがあれば、[用語集](/getstart/term)や公式ドキュメント、そしてチームのメンバーを頼ってくださいね。

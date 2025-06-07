@@ -1,0 +1,258 @@
+---
+title: Next.jsの基礎
+description: Reactアプリケーションを効率的に構築するためのフレームワーク、Next.jsの基本的な仕組みと使い方をやさしく解説します。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro'; // 相対パスを修正
+
+## Next.jsってなんだろう？
+
+Next.js（ネクストジェイエス）は、一言でいうと**ReactをベースにしたWebアプリケーション開発のための強力なフレームワーク（骨組み）**です。
+ReactがUI部品を作るのに特化しているのに対し、Next.jsはルーティング（ページのURL管理）、データの取得方法、サーバーサイドでの処理、パフォーマンス最適化など、Webアプリケーションを作る上で必要な多くの機能を提供してくれます。
+「あしたぼホームページ」も、このNext.js (バージョン15) を使って作られています。
+
+{/* ここに「Next.jsがReactアプリを包み込み、様々な機能を提供するイメージ図」を挿入 */}
+
+### なぜNext.jsを使うの？
+
+-   **簡単なページ作成とルーティング**: ファイルを特定のフォルダに置くだけで、自動的にページのURLが作られます。
+-   **多様なレンダリング戦略**: ページの表示方法を柔軟に選べます（サーバーで事前に作る、アクセス時に作る、など）。これにより、表示速度の向上やSEO対策がしやすくなります。
+-   **API開発も可能**: 同じプロジェクト内で、Webページの裏側で動くAPI（プログラム間のデータのやり取り窓口）も簡単に作れます。
+-   **開発体験の向上**: 画像の最適化、コードの自動分割、高速なリフレッシュなど、開発を快適にする機能が豊富です。
+-   **TypeScriptとの相性抜群**: TypeScriptを標準でサポートしており、型安全な開発がしやすいです。
+
+## App Router: 新しいルーティングシステム (Next.js 13.4以降)
+
+「あしたぼホームページ」で使われているNext.js 15では、主に **App Router** という仕組みでページのURLと表示内容を管理します。
+これは、プロジェクトの `src/app` ディレクトリ（またはルートの `app` ディレクトリ）のフォルダ構造に基づいてルーティングが行われるというものです。
+
+### App Routerの基本的なファイル規約
+
+<Steps>
+1.  **`page.tsx` (または `.js`, `.jsx`)**:
+    各フォルダ内に `page.tsx` という名前のファイルを作成すると、そのフォルダのパスに対応するページのUIコンポーネントとして認識されます。これが実際にブラウザに表示される内容です。
+    -   例: `src/app/page.tsx` → `http://localhost:3000/` (トップページ)
+    -   例: `src/app/about/page.tsx` → `http://localhost:3000/about`
+    -   例: `src/app/blog/my-first-post/page.tsx` → `http://localhost:3000/blog/my-first-post`
+
+2.  **`layout.tsx` (または `.js`, `.jsx`)**:
+    各フォルダ内に `layout.tsx` を作成すると、そのフォルダおよび配下のページで共通して使われるレイアウトコンポーネントになります。ヘッダー、フッター、サイドバーなど、全ページ共通の骨組みを作るのに便利です。
+    -   `layout.tsx` は、子要素（その階層の `page.tsx` や、さらに下層の `layout.tsx`）を `children` という名前のpropsで受け取り、それを表示する必要があります。
+    ```tsx
+    // src/app/blog/layout.tsx の例
+    import type { Metadata } from 'next';
+
+    export const metadata: Metadata = {
+      title: 'ブログ',
+      description: 'あしたぼのブログ記事一覧です。',
+    };
+
+    export default function BlogLayout({
+      children,
+    }: {
+      children: React.ReactNode;
+    }) {
+      return (
+        <section>
+          <h2>ブログセクション</h2>
+          <nav> {/* ブログ共通のナビゲーションなど */} </nav>
+          {children} {/* ここに各ブログ記事のpage.tsxの内容が表示される */}
+        </section>
+      );
+    }
+    ```
+
+3.  **その他の特別なファイル**:
+    -   **`loading.tsx`**: 同じ階層の `page.tsx` のデータ読み込み中などに表示されるローディングUI（スピナーなど）を定義できます。ReactのSuspenseと連携します。
+    -   **`error.tsx`**: エラーが発生した際に表示されるエラーページUIを定義できます。
+    -   **`not-found.tsx`**: `notFound()` 関数が呼び出されたり、該当するルートが見つからなかった場合に表示される「ページが見つかりません」UIを定義できます。
+    -   **`template.tsx`**: `layout.tsx` と似ていますが、ナビゲーション間で状態を保持せず、毎回再マウントされます。
+    -   **`route.ts` (または `.js`)**: APIエンドポイントを作成します (後述)。
+
+</Steps>
+
+{/* ここに「App Routerのディレクトリ構造とURLのマッピングを示す図」を挿入 */}
+
+### 動的ルーティング
+
+URLの一部が可変になるページ（例: ブログ記事の詳細ページ `/blog/[slug]` やユーザープロフィールページ `/users/[id]`）も簡単に作れます。
+フォルダ名を角括弧 `[]` で囲みます。
+
+-   例: `src/app/blog/[slug]/page.tsx`
+    -   `/blog/my-first-post` や `/blog/another-exciting-topic` のようなURLにマッチします。
+    -   コンポーネント内で `params.slug` として `my-first-post` や `another-exciting-topic` の値を受け取れます。
+
+```tsx
+// src/app/blog/[slug]/page.tsx の例
+async function getPostData(slug: string) {
+  // ここでslugを使って記事データを取得する処理 (例: API呼び出し、ファイル読み込み)
+  // const res = await fetch(`https://.../posts/${slug}`);
+  // return res.json();
+  return { title: `記事: ${slug}`, content: `${slug} の本文です...` };
+}
+
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const post = await getPostData(params.slug);
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  );
+}
+
+// ビルド時に静的に生成するパスを指定する場合 (SSG)
+export async function generateStaticParams() {
+  // const posts = await fetch('https://.../posts').then((res) => res.json())
+  // return posts.map((post) => ({ slug: post.slug }))
+  return [{ slug: 'my-first-post' }, { slug: 'another-topic' }];
+}
+```
+
+## サーバーコンポーネントとクライアントコンポーネント
+
+App Routerでは、コンポーネントはデフォルトで**サーバーコンポーネント**として扱われます。
+サーバーコンポーネントはサーバー側でレンダリングされ、クライアント（ブラウザ）にはHTMLとして送信されます。これにより、初期表示が速くなったり、機密情報を含む処理を安全に行えたりします。
+
+一方、ユーザーの操作に反応したり（`onClick`など）、状態を保持したり（`useState`）、ブラウザのAPIを使ったりするコンポーネントは、**クライアントコンポーネント**として定義する必要があります。
+クライアントコンポーネントにするには、ファイルの先頭に `'use client';` という記述を追加します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">サーバーコンポーネント (例)</Fragment>
+  <Fragment slot="tab-1-content">
+    ```tsx
+    // src/app/my-server-page/page.tsx
+    // (デフォルトでサーバーコンポーネント)
+
+    async function fetchData() {
+      const res = await fetch('https://api.example.com/data', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
+    }
+
+    export default async function MyServerPage() {
+      const data = await fetchData(); // サーバーサイドでデータを取得
+
+      return (
+        <div>
+          <h1>サーバーから取得したデータ</h1>
+          <pre>{JSON.stringify(data, null, 2)}</pre>
+          {/* ここにクライアントコンポーネントを配置することも可能 */}
+          {/* <InteractiveButton /> */}
+        </div>
+      );
+    }
+    ```
+  </Fragment>
+  <Fragment slot="tab-2-label">クライアントコンポーネント (例)</Fragment>
+  <Fragment slot="tab-2-content">
+    ```tsx
+    // src/components/InteractiveButton.tsx
+    'use client'; // クライアントコンポーネント宣言
+
+    import { useState } from 'react';
+
+    export default function InteractiveButton() {
+      const [count, setCount] = useState(0);
+
+      return (
+        <button onClick={() => setCount(count + 1)}>
+          クリック回数: {count}
+        </button>
+      );
+    }
+    ```
+  </Fragment>
+</CodePreviewTabs>
+
+<Aside type="tip">
+サーバーコンポーネントとクライアントコンポーネントはうまく使い分けることが重要です。
+できるだけサーバーコンポーネントを使い、インタラクティブ性が必要な部分だけをクライアントコンポーネントとして切り出すのが良いとされています。
+</Aside>
+
+## API Routes (App Router版)
+
+Next.jsでは、Webページの表示だけでなく、サーバーサイドで動作するAPIエンドポイントも簡単に作成できます。
+App Routerでは、`app` ディレクトリ内に `route.ts` (または `.js`) という名前のファイルを作成し、HTTPメソッド（`GET`, `POST`, `PUT`, `DELETE`など）に対応する名前の関数をエクスポートします。
+
+```ts
+// src/app/api/hello/route.ts
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  // requestオブジェクトからクエリパラメータなどを取得可能
+  // const { searchParams } = new URL(request.url);
+  // const name = searchParams.get('name');
+
+  return NextResponse.json({ message: `こんにちは、世界！` });
+}
+
+export async function POST(request: Request) {
+  const body = await request.json(); // リクエストボディを取得
+  // bodyを使った処理...
+  return NextResponse.json({ received: body }, { status: 201 });
+}
+```
+この例では、`/api/hello` というURLに対してGETリクエストを送ると `{ message: "こんにちは、世界！" }` というJSONが返ってきます。
+
+## ページ遷移と画像表示
+
+-   **`<Link>` コンポーネント**:
+    Next.jsアプリ内のページ間を遷移するには、HTMLの `<a>` タグの代わりに `next/link` からインポートした `<Link>` コンポーネントを使います。これにより、クライアントサイドでの高速なページ遷移が実現されます。
+    ```tsx
+    import Link from 'next/link';
+
+    function Navigation() {
+      return (
+        <nav>
+          <Link href="/">ホーム</Link>
+          <Link href="/about">アバウト</Link>
+          <Link href="/blog/my-first-post" prefetch={false}>最初の記事へ</Link>
+        </nav>
+      );
+    }
+    ```
+-   **`<Image>` コンポーネント**:
+    画像を効率的に表示するために、HTMLの `<img>` タグの代わりに `next/image` からインポートした `<Image>` コンポーネントを使うことが推奨されます。画像の自動最適化（サイズ変更、フォーマット変換）、遅延読み込みなどの機能を提供します。
+    ```tsx
+    import Image from 'next/image';
+    import profilePic from '../public/me.png'; // publicフォルダの画像
+
+    function MyProfile() {
+      return (
+        <div>
+          <h1>私のプロフィール</h1>
+          <Image
+            src={profilePic}
+            alt="私の写真"
+            width={500} // 表示サイズを指定
+            height={500}
+            // placeholder="blur" // ブラーアッププレースホルダー
+            // quality={75} // 画質
+          />
+          <Image
+            src="/images/logo.svg" // publicフォルダからの相対パス
+            alt="ロゴ"
+            width={100}
+            height={50}
+          />
+        </div>
+      );
+    }
+    ```
+
+## まとめ
+
+-   Next.jsはReactをベースにした強力なWebアプリケーションフレームワークです。
+-   **App Router** を使い、`app` ディレクトリのファイル構造でルーティングを管理します (`page.tsx`, `layout.tsx`など)。
+-   **サーバーコンポーネント**と**クライアントコンポーネント (`'use client'`)** を適切に使い分けます。
+-   APIエンドポイントも `route.ts` で簡単に作成できます。
+-   `<Link>` でページ遷移、`<Image>` で画像表示を最適化します。
+
+Next.jsにはここで紹介しきれないほど多くの機能があります（レンダリング戦略のSSR/SSG、ミドルウェア、国際化など）。
+まずはこれらの基本を理解し、実際に「あしたぼホームページ」のコードを見ながら、どのように使われているか確認してみましょう。
+分からない言葉が出てきたら、[用語集](/getstart/term)も活用してくださいね。
+
+次は、Webサイトの見た目を手軽に整える[Tailwind CSSの基礎](/web/tailwind)について学びましょう。

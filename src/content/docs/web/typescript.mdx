@@ -1,0 +1,234 @@
+---
+title: TypeScriptの基礎
+description: JavaScriptをより安全で堅牢にするTypeScriptの基本的な概念と使い方をやさしく解説します。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro'; // 相対パスを修正
+
+## TypeScriptってなんだろう？
+
+TypeScript（タイプスクリプト）は、Microsoftによって開発されたプログラミング言語で、一言でいうと**JavaScriptに「型」のシステムを加えたもの**です。
+JavaScriptは非常に柔軟な言語ですが、その柔軟さが原因で、特に大きなプロジェクトになると予期せぬエラーが発生しやすくなることがあります。
+
+TypeScriptは、コードを書いている段階で「この変数には数字しか入らないよ」「この関数は文字列を返すよ」といった「型」のルールをチェックしてくれます。これにより、プログラムを実行する前に多くの間違いを発見でき、より安全でバグの少ないコードを書く手助けをしてくれます。
+「あしたぼホームページ」も、このTypeScriptを使って開発されています。
+
+{/* ここに「JavaScriptのコードがTypeScriptによって型チェックされ、エラーが事前に見つかるイメージ図」を挿入 */}
+
+### なぜTypeScriptを使うの？
+
+-   **バグの早期発見**: 型のおかげで、タイプミスや間違ったデータの使い方などを、コードを書いている最中（コンパイル時）に見つけられます。
+-   **コードの可読性向上**: 型情報があることで、他の人が書いたコードや、昔自分が書いたコードでも、データがどのような形をしているのか理解しやすくなります。
+-   **エディタの強力なサポート**: VS Codeなどの高機能なエディタでは、型の情報を使ってコード補完（入力候補の表示）やリファクタリング（コードの安全な書き換え）が非常に賢く行われます。
+-   **大規模開発への適性**: プロジェクトが大きくなり、関わる人が増えても、型システムがコードの品質を保つのに役立ちます。
+
+<Aside type="note">
+TypeScriptで書かれたコードは、最終的にはJavaScriptに変換（コンパイル）されてブラウザやNode.jsで実行されます。つまり、TypeScriptはJavaScriptの機能をすべて含みつつ、さらに型という安全装置を追加したもの（スーパーセット）と考えることができます。
+</Aside>
+
+## 基本的な型を覚えよう
+
+TypeScriptには、様々な種類のデータを表現するための基本的な型が用意されています。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">基本的な型</Fragment>
+  <Fragment slot="tab-1-content">
+    ```ts
+    // 文字列型 (string)
+    let userName: string = "あしたぼ太郎";
+    // userName = 123; // エラー！ 文字列型に数字は代入できない
+
+    // 数値型 (number)
+    let age: number = 20;
+    // age = "20歳"; // エラー！
+
+    // 真偽値型 (boolean)
+    let isActive: boolean = true;
+    // isActive = "yes"; // エラー！
+
+    // 配列型 (要素の型[])
+    let hobbies: string[] = ["読書", "映画鑑賞"];
+    let scores: Array<number> = [80, 95, 72]; // Array<要素の型> という書き方もできる
+
+    // オブジェクト型 (具体的な形は後述)
+    let userProfile: object = { name: "花子", age: 25 };
+
+    // any型 (どんな型でもOK、でも非推奨！)
+    let anything: any = "なんでも入る";
+    anything = 100;
+    anything = false; // エラーにならないが、型の恩恵を受けられない
+
+    // null と undefined
+    let noValue: null = null;
+    let notAssigned: undefined = undefined;
+    ```
+  </Fragment>
+  <Fragment slot="tab-2-label">解説</Fragment>
+  <Fragment slot="tab-2-content">
+    <ul>
+      <li><code>string</code>: 文字列を表します。ダブルクォート(<code>"</code>)またはシングルクォート(<code>'</code>)で囲みます。</li>
+      <li><code>number</code>: 整数や小数を表します。</li>
+      <li><code>boolean</code>: <code>true</code> (真) または <code>false</code> (偽) のどちらかの値を表します。</li>
+      <li><code>string[]</code> や <code>Array</code>: 同じ型の要素が複数集まった配列を表します。</li>
+      <li><code>object</code>: オブジェクトを表しますが、これだけだと中身の形が分からないので、通常はもっと具体的に型定義します。</li>
+      <li><code>any</code>: どんな型でも許容しますが、TypeScriptの型チェックを無効にしてしまうため、極力使わないようにしましょう。</li>
+      <li><code>null</code>: 「値がない」ことを意図的に示す値です。</li>
+      <li><code>undefined</code>: 「まだ値が代入されていない」状態を示します。</li>
+    </ul>
+  </Fragment>
+</CodePreviewTabs>
+
+### 型推論
+
+TypeScriptは賢いので、多くの場合、開発者が明示的に型を書かなくても文脈から型を推論してくれます。
+```ts
+let message = "こんにちは！"; // message は string型だと推論される
+// message = 100; // エラー！ string型にnumberは代入できない
+```
+ただし、関数の引数や戻り値、複雑なオブジェクトなど、型が自明でない場合は明示的に型注釈を書くのが良い習慣です。
+
+## オブジェクトの型を定義する (`type` と `interface`)
+
+複数のデータをまとめて扱うオブジェクトの「形」を定義するには、`type`エイリアスまたは`interface`を使います。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">typeエイリアス</Fragment>
+  <Fragment slot="tab-1-content">
+    ```ts
+    // Userという名前の型を定義
+    type User = {
+      id: number;
+      name: string;
+      email?: string; // '?' を付けるとオプショナル（あってもなくても良い）プロパティになる
+      isAdmin: boolean;
+      registerDate: Date;
+    };
+
+    const user1: User = {
+      id: 1,
+      name: "山田さん",
+      isAdmin: false,
+      registerDate: new Date("2023-01-15"),
+    };
+
+    // user1.email は undefined
+
+    const user2: User = {
+      id: 2,
+      name: "鈴木さん",
+      email: "suzuki@example.com",
+      isAdmin: true,
+      registerDate: new Date("2023-02-20"),
+    };
+    ```
+  </Fragment>
+  <Fragment slot="tab-2-label">interface</Fragment>
+  <Fragment slot="tab-2-content">
+    ```ts
+    // Articleという名前のインターフェースを定義
+    interface Article {
+      title: string;
+      content: string;
+      readonly authorId: number; // readonly を付けると変更不可になる
+      tags?: string[];
+      publicationDate: Date;
+    }
+
+    const myArticle: Article = {
+      title: "TypeScript入門",
+      content: "TypeScriptは素晴らしい...",
+      authorId: 101,
+      tags: ["プログラミング", "TypeScript"],
+      publicationDate: new Date(),
+    };
+
+    // myArticle.authorId = 102; // エラー！ readonlyプロパティは変更できない
+    ```
+  </Fragment>
+</CodePreviewTabs>
+
+**`type` と `interface` の使い分け:**
+- どちらもオブジェクトの形を定義できますが、`interface` はクラスに実装(implements)させたり、同名の`interface`を宣言してプロパティを拡張（マージ）できたりする特徴があります。
+- `type` は、ユニオン型やタプル型など、より複雑な型を定義するのに柔軟です。
+- プロジェクト内でどちらかに統一するか、用途に応じて使い分けるのが一般的です。「あしたぼホームページ」ではどちらが主に使われているか、既存のコードを見てみましょう。
+
+## 関数の型定義
+
+関数の引数や戻り値にも型を指定することで、関数の使い方が明確になり、間違いを防げます。
+
+```ts
+// 引数nameはstring型、戻り値もstring型
+function createGreeting(name: string): string {
+  return `こんにちは、${name}さん！`;
+}
+
+const greetingMessage = createGreeting("あしたぼ"); // "こんにちは、あしたぼさん！"
+
+// 戻り値がない関数の場合は void型 を指定
+function logMessage(message: string): void {
+  console.log(message);
+}
+
+// アロー関数の場合
+const addNumbers = (a: number, b: number): number => {
+  return a + b;
+};
+
+// オプショナル引数とデフォルト引数
+function printUserInfo(name: string, age?: number, country: string = "日本"): void {
+  console.log(`名前: ${name}`);
+  if (age !== undefined) {
+    console.log(`年齢: ${age}歳`);
+  }
+  console.log(`国: ${country}`);
+}
+
+printUserInfo("田中"); // 名前: 田中, 国: 日本
+printUserInfo("佐藤", 30); // 名前: 佐藤, 年齢: 30歳, 国: 日本
+printUserInfo("John", 25, "USA"); // 名前: John, 年齢: 25歳, 国: USA
+```
+
+## その他の便利な型
+
+-   **ユニオン型 (`|`)**: 複数の型のうち、いずれか一つであることを示します。
+    ```ts
+    let id: string | number;
+    id = 101;       // OK
+    id = "user-abc"; // OK
+    // id = true;    // エラー！
+    ```
+-   **リテラル型**: 特定の文字列や数値そのものを型として扱います。
+    ```ts
+    type Status = "pending" | "approved" | "rejected";
+    let orderStatus: Status = "pending";
+    // orderStatus = "shipped"; // エラー！ Status型に "shipped" は含まれない
+    ```
+-   **ジェネリクス (`<T>`)**: 型をパラメータとして受け取ることで、様々な型に対応できる再利用性の高い関数やクラス、型エイリアスを作れます。
+    ```ts
+    function getFirstElement<T>(arr: T[]): T | undefined {
+      return arr.length > 0 ? arr[0] : undefined;
+    }
+    const firstString = getFirstElement(["a", "b", "c"]); // firstString は string | undefined 型
+    const firstNumber = getFirstElement([1, 2, 3]);       // firstNumber は number | undefined 型
+    ```
+
+## `tsconfig.json` とは？
+
+プロジェクトのルートディレクトリにある `tsconfig.json` ファイルは、TypeScriptコンパイラの設定ファイルです。
+どのバージョンのJavaScriptにコンパイルするか、どのような型チェックを厳しく行うか、どのファイルを含めるか／除外するか、などを細かく設定できます。
+「あしたぼホームページ」の `tsconfig.json` を見ることで、プロジェクトのTypeScript設定が分かります。
+
+## まとめ
+
+-   TypeScriptはJavaScriptに**型**の概念を導入し、コードの安全性と可読性を高めます。
+-   基本的な型 (`string`, `number`, `boolean`, 配列など) を覚えましょう。
+-   `type` や `interface` を使って、オブジェクトや関数の型を明確に定義できます。
+-   型推論、ユニオン型、ジェネリクスなど、便利な機能を活用しましょう。
+-   `tsconfig.json` でコンパイラの動作を制御します。
+
+TypeScriptは奥が深いですが、まずは基本的な型付けから慣れていくことが大切です。
+VS Codeなどのエディタがエラーを教えてくれるので、それをヒントに修正していくうちに自然と身についていきます。
+分からない言葉が出てきたら、[用語集](/getstart/term)も活用してくださいね。
+
+次は、UIを部品として組み立てる[Reactの基礎](/web/react)（もし既に読んでいれば[Next.jsの基礎](/web/nextjs)）へ進みましょう！

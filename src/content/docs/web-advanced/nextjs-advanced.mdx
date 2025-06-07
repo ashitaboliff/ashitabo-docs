@@ -1,0 +1,216 @@
+---
+title: Next.js (応用編)
+description: App Routerの高度なルーティング、レンダリング戦略、サーバーアクション、ミドルウェアなど、Next.jsのパワフルな機能を深掘りします。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+[Next.jsの基礎](/web/nextjs)では、App Routerを中心とした基本的なページ作成やAPIルートについて学びました。
+この応用編では、Next.jsが提供するさらに高度な機能や概念を探求し、「あしたぼホームページ」のような本格的なWebアプリケーションを構築するための知識を深めます。
+レンダリング戦略の細かな制御、複雑なUIを実現するためのルーティング技術、サーバーサイドとのより洗練された連携方法などを学んでいきましょう。
+
+## App Routerにおけるレンダリング戦略の深掘り
+
+Next.jsのApp Routerは、デフォルトでサーバーコンポーネントを使用し、柔軟なレンダリング戦略を可能にします。
+
+<Steps>
+1.  **動的サーバーサイドレンダリング (Dynamic SSR) - デフォルト**
+    App Routerのページ（サーバーコンポーネント）は、特に設定しなければリクエスト毎にサーバーでレンダリングされます。データフェッチに `cache: 'no-store'` を指定したり、動的な関数（`headers()`, `cookies()`など）を使用したりするとこの挙動になります。
+    ```tsx
+    // app/dynamic-page/page.tsx
+    async function getCurrentTime() {
+      const res = await fetch('http://worldtimeapi.org/api/ip', { cache: 'no-store' });
+      return res.json();
+    }
+    export default async function DynamicPage() {
+      const timeData = await getCurrentTime();
+      return <p>現在の時刻 (サーバー取得): {timeData.datetime}</p>;
+    }
+    ```
+
+2.  **静的サイト生成 (SSG) と `generateStaticParams`**
+    ビルド時に事前にHTMLファイルを生成しておくことで、高速な表示を実現します。動的ルート (`[slug]`) を持つページをSSGする場合、`generateStaticParams` 関数でビルド時に生成するパスの一覧をNext.jsに伝える必要があります。
+    ```tsx
+    // app/blog/[slug]/page.tsx
+    export async function generateStaticParams() {
+      // 例: CMSから記事のスラッグ一覧を取得
+      // const posts = await getAllPostSlugsFromCMS();
+      // return posts.map((post) => ({ slug: post.slug }));
+      return [{ slug: 'post-1' }, { slug: 'post-2' }];
+    }
+    // ... (ページコンポーネントの実装は基礎編を参照) ...
+    ```
+
+3.  **インクリメンタル静的再生成 (ISR) と `revalidate`**
+    SSGの利点を保ちつつ、定期的にバックグラウンドでページを再生成し、内容を最新に保つ仕組みです。データフェッチ時に `next: { revalidate: seconds }` オプションを指定します。
+    ```tsx
+    // app/news/page.tsx
+    async function getNews() {
+      const res = await fetch('https://api.example.com/news', {
+        next: { revalidate: 60 }, // 60秒ごとに再検証
+      });
+      return res.json();
+    }
+    export default async function NewsPage() {
+      const newsItems = await getNews();
+      // ... (newsItemsを使った表示) ...
+    }
+    ```
+
+4.  **クライアントサイドレンダリング (CSR)**
+    `'use client';` でマークされたクライアントコンポーネント内で、`useEffect` と `fetch` API（またはSWR, React Queryなどのライブラリ）を使ってブラウザ側でデータを取得し、UIをレンダリングします。ユーザー固有のデータ表示や、頻繁に更新されるデータに適しています。
+    (ただし、`useEffect`でのデータフェッチは、ローディング状態やエラー処理を自前で実装する必要があり、Next.js 13以降ではサーバーコンポーネントでのデータフェッチが推奨される場面も多いです。)
+
+</Steps>
+{/* ここに「各レンダリング戦略の動作フローを示す図」を挿入 */}
+
+## 高度なルーティング (App Router)
+
+App Routerは、基本的なファイルベースルーティング以外にも、複雑なUIレイアウトやUXを実現するための高度なルーティング機能を提供します。
+
+-   **ルートグループ `(folderName)`**:
+    URLのパスセグメントに影響を与えずに、特定のルート群に対して共通のレイアウトを適用したり、整理したりするために使います。フォルダ名を括弧 `()` で囲みます。
+    例: `app/(marketing)/about/page.tsx` と `app/(marketing)/contact/page.tsx` は、共通の `app/(marketing)/layout.tsx` を共有しつつ、URLは `/about` と `/contact` になります。
+
+-   **パラレルルート (`@slotName`)**:
+    同じURLで、複数の独立したページ（スロット）を同じレイアウト内で同時にレンダリングできます。フォルダ名の前に `@` を付けます。ダッシュボードUIなどで、メインコンテンツとサイドバー、通知エリアなどを個別に管理・表示するのに便利です。
+    例: `app/dashboard/layout.tsx` 内で `@team` と `@analytics` スロットを定義し、それぞれ `app/dashboard/@team/page.tsx` と `app/dashboard/@analytics/page.tsx` を表示。
+
+-   **インターセプトルート (`(.)`, `(..)`, `(...)`)**:
+    現在のレイアウトを維持したまま、別のルートのコンテンツを「傍受（インターセプト）」して表示する機能です。モーダルダイアログや、ギャラリーで画像をクリックした際に詳細をオーバーレイ表示するような場合に役立ちます。
+    -   `(.)folderName`: 同じ階層のルートをインターセプト。
+    -   `(..)folderName`: 1つ上の階層のルートをインターセプト。
+    -   `(...)folderName`: ルート (`app`) からの相対パスでインターセプト。
+
+{/* ここに「ルートグループ、パラレルルート、インターセプトルートの概念図」を挿入 */}
+
+## ミドルウェア (`middleware.ts`)
+
+ミドルウェアは、リクエストがサーバーコンポーネントやAPIルートによって処理される前に実行されるコードです。認証チェック、リダイレクト、A/Bテスト、リクエスト/レスポンスヘッダーの書き換えなど、共通の処理を挟み込むのに使います。
+プロジェクトのルート（または `src` ディレクトリ直下）に `middleware.ts` (または `.js`) という名前のファイルを作成します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">middleware.ts (例)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  import { NextResponse } from 'next/server';
+  import type { NextRequest } from 'next/server';
+
+  export function middleware(request: NextRequest) {
+    // 例: /admin パスへのアクセスに認証が必要な場合
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+      const authToken = request.cookies.get('auth-token')?.value;
+      if (!authToken) {
+        // 認証トークンがなければログインページへリダイレクト
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('from', request.nextUrl.pathname); // 元のパスをクエリに
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    // 例: 特定のパスでレスポンスヘッダーを追加
+    if (request.nextUrl.pathname === '/api/special') {
+      const response = NextResponse.next(); // 次の処理へ進める
+      response.headers.set('X-Custom-Header', 'Hello from middleware!');
+      return response;
+    }
+
+    return NextResponse.next(); // その他の場合はそのまま次の処理へ
+  }
+
+  // ミドルウェアを適用するパスを指定 (省略すると全てのパスに適用)
+  export const config = {
+    matcher: ['/admin/:path*', '/api/special'],
+  };
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+## サーバーアクション (Server Actions)
+
+サーバーアクションは、クライアントコンポーネントから直接サーバーサイドの関数を呼び出し、データの変更やその他のサーバー処理を行うための仕組みです。フォーム送信やボタンクリックによるデータ更新などが、よりシンプルに、かつ安全に実装できます。
+サーバーアクションとして定義された関数は、ファイルの先頭または関数自体に `'use server';` ディレクティブを記述します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">サーバーアクションの例 (actions.ts)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  // src/app/actions.ts (または任意の場所)
+  'use server'; // このファイル内の関数はサーバーアクションとして扱える
+
+  import prisma from '@/lib/prisma';
+  import { revalidatePath } from 'next/cache';
+
+  export async function createTodo(formData: FormData) {
+    const title = formData.get('title') as string;
+    if (!title) {
+      return { error: 'タイトルは必須です。' };
+    }
+    try {
+      await prisma.todo.create({ data: { title } });
+      revalidatePath('/todos'); // /todosページのキャッシュを更新
+      return { success: true };
+    } catch (e) {
+      return { error: 'Todoの作成に失敗しました。' };
+    }
+  }
+
+  export async function toggleTodo(id: number, completed: boolean) {
+    try {
+      await prisma.todo.update({ where: { id }, data: { completed } });
+      revalidatePath('/todos');
+      return { success: true };
+    } catch (e) {
+      return { error: 'Todoの更新に失敗しました。' };
+    }
+  }
+  ```
+  </Fragment>
+  <Fragment slot="tab-2-label">クライアントコンポーネントでの使用例</Fragment>
+  <Fragment slot="tab-2-content">
+  ```tsx
+  // src/components/TodoForm.tsx
+  'use client';
+  import { createTodo } from '@/app/actions'; // サーバーアクションをインポート
+  import { experimental_useFormState as useFormState, experimental_useFormStatus as useFormStatus } from 'react-dom';
+
+
+  const initialState = { error: null, success: false };
+
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+    return <button type="submit" disabled={pending}>{pending ? '送信中...' : '追加'}</button>;
+  }
+
+  export function TodoForm() {
+    const [state, formAction] = useFormState(createTodo, initialState);
+
+    return (
+      <form action={formAction}>
+        <input type="text" name="title" required className="input input-bordered" />
+        <SubmitButton />
+        {state?.error && <p className="text-red-500">{state.error}</p>}
+        {state?.success && <p className="text-green-500">Todoを追加しました！</p>}
+      </form>
+    );
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+<Aside type="note">
+`useFormState` と `useFormStatus` は、React DOMの実験的なAPIです（`experimental_`プレフィックス）。将来的に変更される可能性があります。
+</Aside>
+
+## まとめ
+
+-   App Routerでは、**レンダリング戦略**（SSR, SSG, ISR, CSR）をページの特性やデータの種類に応じて柔軟に選択・制御できます。
+-   **高度なルーティング機能**（ルートグループ、パラレルルート、インターセプトルート）を駆使して、複雑なUIレイアウトを実現できます。
+-   **ミドルウェア**を使うと、リクエスト処理の共通ロジックを効率的に実装できます。
+-   **サーバーアクション**は、クライアントからのデータ変更操作をシンプルかつ安全に行うための強力な手段です。
+
+これらの応用的な機能を理解し活用することで、Next.jsのポテンシャルを最大限に引き出し、より高度で洗練されたWebアプリケーションを構築できます。
+「あしたぼホームページ」の開発においても、これらの知識が役立つ場面がきっとあるでしょう。
+公式ドキュメントや[用語集](/getstart/term)も参照しながら、理解を深めていってください。

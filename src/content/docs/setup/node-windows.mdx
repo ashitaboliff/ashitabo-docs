@@ -1,0 +1,62 @@
+---
+title: Node.jsによる環境構築 (Windows)
+description: Windowsに直接Node.jsをインストールして開発環境を構築する手順を説明します。
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+このページでは、Windows環境に直接Node.jsをインストールして、「あしたぼホームページ」の開発環境を構築する方法を説明します。
+WSL (Windows Subsystem for Linux) を使わない方向けの手順です。
+
+Node.jsは、ウェブサイトの裏側で動くプログラム（サーバーサイドのJavaScript）を実行したり、開発に必要なツール（例：Next.jsのコマンド）を使ったりするために必要です。
+
+## Node.jsのインストール
+
+<Steps>
+1.  **インストーラーのダウンロード**
+    [Node.js 公式サイト](https://nodejs.org/en) にアクセスし、推奨版（LTS - Long Term Support）のWindows Installer (`.msi`) をダウンロードします。
+    {/* ここにNode.js公式サイトのダウンロードページのスクリーンショットを挿入。LTS版を選択していることがわかるように。 */}
+    {/* 例：public/assets/images/setup/nodejs-windows-download.png */}
+
+2.  **インストール**
+    ダウンロードしたインストーラーを実行し、画面の指示に従ってインストールを進めます。
+    基本的にデフォルトの設定のままで問題ありません。
+    途中で「Tools for Native Modules」のインストールについて尋ねられることがあります。「Automatically install the necessary tools. Note that this will also install Chocolatey...」というチェックボックスは、**オフ**のままで進めてください（今回の開発では不要です）。
+    {/* ここにNode.jsインストーラーの主要な画面のスクリーンショットを数点挿入。 */}
+    {/* 例：public/assets/images/setup/nodejs-windows-installer-01.png */}
+    {/* 例：public/assets/images/setup/nodejs-windows-installer-02.png */}
+
+3.  **インストール確認**
+    インストールが正常に完了したか確認します。
+    Windowsの検索バーで「cmd」と入力し、「コマンドプロンプト」を起動します。
+    {/* ここにコマンドプロンプト起動方法の画像を挿入 */}
+    {/* 例：public/assets/images/setup/cmd-launch.png */}
+
+    開いたコマンドプロンプトに、以下のコマンドをそれぞれ入力し、Enterキーを押します。
+    ```bash
+    node -v
+    npm -v
+    ```
+    {/* ここに `node -v` と `npm -v` の実行結果イメージ画像を挿入 */}
+    {/* 例：public/assets/images/setup/nodejs-windows-version-check.png */}
+    `v` から始まるバージョン番号がそれぞれ表示されれば、インストールは成功です。エラーメッセージが表示された場合は、インストールの手順を見直すか、周りの経験者に相談してください。
+
+</Steps>
+
+これで、WindowsへのNode.jsのインストールは完了です。
+
+## 開発の準備
+
+Node.jsのインストールが完了したら、次は以下の準備を進めましょう。
+
+1.  **GitとGitHubの準備**:
+    ソースコードを管理し、チームで開発するためにGitとGitHubを使います。設定方法は[Git, GitHubの使い方ガイド(初級)](/git/beginner)を参照してください。
+
+2.  **Visual Studio Code (VS Code) の準備**:
+    コードを書くためのエディタとしてVS Codeをおすすめします。インストールと基本的な設定については、[VS Codeのセットアップ（別ページ作成予定）]()を参照してください。（Gitのページで触れるかもしれません）
+
+3.  **プロジェクトの取得と実行**:
+    開発環境が整ったら、いよいよ「あしたぼホームページ」のソースコードを手元に持ってきて動かしてみます。
+    具体的な手順は、[プロジェクトの実行方法（別ページ作成予定）]()で詳しく説明します。
+
+もし途中でエラーが出たり、うまくいかない場合は、表示されたエラーメッセージをよく読んでみてください。それでも解決しない場合は、遠慮なく周りの経験者に質問しましょう。

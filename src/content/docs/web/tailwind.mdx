@@ -1,0 +1,177 @@
+---
+title: Tailwind CSSの基礎
+description: HTMLに直接スタイルを書き込むようにデザインできる「Tailwind CSS」と、その拡張「daisyUI」の基本をやさしく解説します。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## Tailwind CSSってなんだろう？
+
+Tailwind CSS（テイルウィンド シーエスエス）は、**ユーティリティファースト**という考え方で作られたCSSフレームワークです。
+従来のCSSのように、自分でCSSファイルにスタイルルール（例: `.my-button { background-color: blue; padding: 10px; }`）をたくさん書く代わりに、あらかじめ用意された小さな「ユーティリティクラス」をHTMLの要素に直接指定していくことでデザインを構築します。
+
+「あしたぼホームページ」のデザインも、このTailwind CSSをベースに作られています。
+
+{/* ここに「HTMLにTailwindのクラスをたくさん付けていくイメージ図」を挿入 */}
+
+### なぜTailwind CSSを使うの？
+
+-   **直感的で速い**: HTMLを見れば、その要素にどんなスタイルが当たっているか一目瞭然。CSSファイルとHTMLファイルを行ったり来たりする必要が減り、スピーディにデザインできます。
+-   **カスタマイズ性が高い**: `tailwind.config.ts` ファイルで、色、フォント、余白の単位など、プロジェクト独自のデザインルールを細かく設定できます。
+-   **ファイルサイズが小さい**: ビルド時に、実際に使われているクラスだけを抽出してCSSファイルを生成するため、最終的なファイルサイズを小さく抑えられます。
+-   **命名に悩まない**: CSSのクラス名を考える必要がほとんどありません。
+
+<Aside type="caution">
+一方で、HTMLのclass属性が長くなりがちという側面もあります。コンポーネント化をうまく行うことで、この点は緩和できます。
+</Aside>
+
+## 基本的な使い方: ユーティリティクラス
+
+Tailwind CSSでは、`bg-blue-500`（背景を青色500番に）、`text-lg`（文字を大きく）、`p-4`（上下左右に4単位のパディング）、`rounded-md`（中程度の角丸）といったクラスを組み合わせてスタイルを適用します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">HTMLの例</Fragment>
+  <Fragment slot="tab-1-content">
+    ```html
+    <button class="bg-sky-500 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
+      素敵なボタン
+    </button>
+    ```
+  </Fragment>
+  <Fragment slot="tab-2-label">プレビューのイメージ</Fragment>
+  <Fragment slot="tab-2-content">
+    <button style={{backgroundColor: 'rgb(14, 165, 233)', color: 'white', fontWeight: 'bold', paddingTop: '0.5rem', paddingBottom: '0.5rem', paddingLeft: '1rem', paddingRight: '1rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'}}>
+      素敵なボタン
+    </button>
+    {/* 上記styleはあくまでTailwindクラスが適用された結果のイメージです */}
+  </Fragment>
+</CodePreviewTabs>
+
+### レスポンシブデザイン
+
+画面幅に応じてスタイルを変えるのも簡単です。`sm:`, `md:`, `lg:`, `xl:` といったプレフィックスを使います。
+「あしたぼホームページ」の `tailwind.config.ts` では、以下のようなブレークポイントが設定されています。
+- `sm`: `620px`
+- `md`: `768px`
+- `lg`: `900px`
+- `xl`: `1280px`
+
+```html
+<div class="bg-red-500 md:bg-green-500 lg:bg-blue-500">
+  <!-- 通常は赤背景、md(768px)以上で緑背景、lg(900px)以上で青背景 -->
+</div>
+```
+
+### 状態バリアント (ホバー、フォーカスなど)
+
+マウスが乗ったとき (`hover:`) や、要素がフォーカスされたとき (`focus:`) など、特定の状態のスタイルも簡単に指定できます。
+```html
+<button class="bg-violet-500 hover:bg-violet-600 focus:outline-none focus:ring focus:ring-violet-300 ...">
+  押してね
+</button>
+```
+
+### ダークモード
+
+`tailwind.config.ts` で `darkMode: 'class'` が設定されていれば、HTMLの親要素（通常は `<html>` タグ）に `class="dark"` を付けることでダークモード用のスタイルを適用できます。クラス名の前に `dark:` を付けます。
+```html
+<body class="bg-white dark:bg-slate-800">
+  <p class="text-slate-700 dark:text-slate-300">
+    ライトモードとダークモードで文字色が変わります。
+  </p>
+</body>
+```
+
+## `tailwind.config.ts` でカスタマイズ
+
+プロジェクトのルートにある `tailwind.config.ts` ファイルで、Tailwind CSSの様々な設定をカスタマイズできます。
+「あしたぼホームページ」の `tailwind.config.ts` では、主に以下のカスタマイズが行われています。
+
+-   **カスタムフォント**: `theme.extend.fontFamily` で、`nicoMoji`, `notojp`, `gkktt` といったフォントが定義されています。これらはCSS変数 (`var(...)`) を介して実際のフォントファイルと紐付けられています。
+    ```ts
+    // tailwind.config.ts の一部
+    fontFamily: {
+      nicoMoji: ['var(--nicomoji)', 'sans-serif'],
+      notojp: ['var(--font-noto-jp)', 'sans-serif'],
+      gkktt: ['var(--851-Gkktt)', 'sans-serif'],
+    }
+    ```
+    HTMLで使う例: `<h1 class="font-nicoMoji">タイトル</h1>`
+-   **カスタム最大幅**: `theme.maxWidth` で、`1/4`, `1/2-screen` のような独自の最大幅クラスが使えるように設定されています。
+
+## daisyUI: Tailwind CSSをもっと便利に！
+
+daisyUI（デイジーユーアイ）は、Tailwind CSSのための人気プラグインで、ボタン、カード、モーダル、ドロップダウンなど、よく使われるUIコンポーネントをTailwindのクラス名だけで簡単に作れるようにしてくれます。
+「あしたぼホームページ」の `package.json` にはdaisyUIが含まれています。
+
+### daisyUIの基本的な使い方
+
+daisyUIを導入すると、`btn` や `card` といったクラス名で、整ったデザインのコンポーネントが利用できます。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">daisyUIのボタン例</Fragment>
+  <Fragment slot="tab-1-content">
+    ```html
+    <button class="btn">標準ボタン</button>
+    <button class="btn btn-primary">プライマリーボタン</button>
+    <button class="btn btn-secondary btn-outline">枠線ボタン</button>
+    <button class="btn btn-accent btn-sm">小さいアクセントボタン</button>
+    ```
+  </Fragment>
+  <Fragment slot="tab-2-label">プレビューのイメージ</Fragment>
+  <Fragment slot="tab-2-content">
+    {/* 実際のdaisyUIの見た目を再現するのは難しいため、説明文で補足 */}
+    <p>上記のようなクラスを指定すると、テーマに沿ったデザインのボタンが表示されます。</p>
+    <button>標準ボタン (イメージ)</button>
+    <button style={{backgroundColor: '#570df8', color: 'white'}}>プライマリーボタン (イメージ)</button>
+  </Fragment>
+</CodePreviewTabs>
+
+### daisyUIの設定 (`tailwind.config.ts`)
+
+daisyUIを使うには、通常 `tailwind.config.ts` にプラグインとして追加します。
+「あしたぼホームページ」の `tailwind.config.ts` には現時点ではdaisyUIのプラグイン設定が見当たりませんが、もし使う場合は以下のように追記します。
+
+```ts
+// tailwind.config.ts
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: ['./src/**/**/*.{js,ts,jsx,tsx,mdx}'],
+  theme: {
+    // ... 省略 ...
+  },
+  plugins: [
+    require('daisyui'), // この行を追加
+  ],
+  // daisyUIのテーマ設定など (任意)
+  daisyui: {
+    themes: ["light", "dark", "cupcake", "bumblebee", "emerald", "corporate", "synthwave", "retro", "cyberpunk", "valentine", "halloween", "garden", "forest", "aqua", "lofi", "pastel", "fantasy", "wireframe", "black", "luxury", "dracula", "cmyk", "autumn", "business", "acid", "lemonade", "night", "coffee", "winter"], // 利用可能なテーマ
+    // styled: true, // コンポーネントクラスにスタイルを適用するか
+    // base: true, // 基本スタイルを適用するか
+    // utils: true, // ユーティリティクラスを生成するか
+    // logs: true, // ログを出力するか
+  },
+};
+export default config;
+```
+`daisyui.themes` で使用するテーマを指定できます。あしたぼホームページで特定のテーマが使われている場合は、それに合わせましょう。
+
+<Aside type="tip">
+daisyUIのコンポーネントも、Tailwind CSSのユーティリティクラスと組み合わせて細かくカスタマイズできます。
+例: `<button class="btn btn-primary text-lg p-4">大きなプライマリーボタン</button>`
+</Aside>
+
+## まとめ
+
+-   Tailwind CSSは、**ユーティリティクラス**をHTMLに直接書いていくことでデザインを構築します。
+-   レスポンシブデザインや状態変化（ホバーなど）、ダークモードもクラス名で簡単に対応できます。
+-   `tailwind.config.ts` でプロジェクト独自のデザインルールを定義できます。
+-   **daisyUI**プラグインを使うと、既成のコンポーネントを手軽に利用でき、さらにTailwindのクラスでカスタマイズも可能です。
+
+Tailwind CSSは非常に多くのクラスがありますが、全てを覚える必要はありません。公式ドキュメントを参照しながら、必要なものから使っていくうちに自然と身についていきます。
+[用語集](/getstart/term)も確認してみてくださいね。
+
+これでWeb開発の基礎（座学編）は一通り終わりです！お疲れ様でした。
+次は、実際に手を動かして開発を体験する[Web開発実践編](/web-practice/)に進みましょう。

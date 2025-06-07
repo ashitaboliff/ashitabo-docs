@@ -1,0 +1,330 @@
+---
+title: フルスタック開発体験 (お知らせ機能を作ろう)
+description: Next.js, Prisma, Reactを使って、お知らせ機能の作成・表示・編集・削除を一通り体験します。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+「フルスタック開発」と聞くと難しそうに感じるかもしれませんが、ここでは「お知らせ機能」という比較的身近な題材を通して、Webアプリケーションの「見た目（フロントエンド）」と「裏側の仕組み（バックエンド）」がどのようにつながって動くのかを体験していきます。
+
+**今回作るもの:**
+シンプルなお知らせ機能（CRUD操作）
+-   お知らせの一覧表示 (Read)
+-   お知らせの詳細表示 (Read)
+-   新しいお知らせの作成 (Create)
+-   お知らせの編集 (Update)
+-   お知らせの削除 (Delete)
+
+**使う主な技術:**
+-   **Next.js (App Router)**: ページの骨組み、APIの窓口
+-   **React (Server & Client Components)**: 見た目の部品作り
+-   **TypeScript**: 安全なコード記述
+-   **Prisma**: データベースとのやり取りを簡単にする道具
+-   **PostgreSQL** (または開発環境ではSQLiteなど): お知らせデータを保存する場所
+
+{/* ここに「お知らせ機能の完成イメージ図（一覧画面、詳細画面、作成フォームなど）」を挿入 */}
+
+## STEP 1: データベースの準備 (Prismaスキーマ定義)
+
+まず、お知らせ情報を保存するためのデータベースの「設計図」をPrismaで書きます。
+
+<Steps>
+1.  **`prisma/schema.prisma` を開く**
+    このファイルにデータベースのテーブル構造やリレーションを定義します。
+
+2.  **`Announcement` モデルを追加**
+    以下のようなモデル（テーブルの設計図）を `schema.prisma` に追記します。
+    ```prisma
+    // prisma/schema.prisma
+
+    datasource db {
+      provider = "postgresql" // または "sqlite" など、プロジェクトに合わせて
+      url      = env("DATABASE_URL")
+    }
+
+    generator client {
+      provider = "prisma-client-js"
+    }
+
+    model Announcement {
+      id        Int      @id @default(autoincrement())
+      title     String   // お知らせのタイトル
+      content   String   // お知らせの内容 (長文も可)
+      createdAt DateTime @default(now()) // 作成日時
+      updatedAt DateTime @updatedAt // 更新日時
+    }
+    ```
+    -   `id`: お知らせを識別するための一意な番号（自動で増える）
+    -   `title`: お知らせのタイトル（文字列）
+    -   `content`: お知らせの本文（文字列）
+    -   `createdAt`: 作成された日時（自動で現在時刻が入る）
+    -   `updatedAt`: 更新された日時（自動で更新時刻が入る）
+
+3.  **マイグレーションを実行**
+    ターミナルで以下のコマンドを実行し、データベースに `Announcement` テーブルを作成（または変更を適用）します。
+    ```bash
+    npx prisma migrate dev --name init-announcement
+    ```
+    `--name` の後には、マイグレーションの内容を表す名前を付けます。
+
+4.  **Prisma Clientを生成**
+    データベースを操作するためのTypeScriptのコードを自動生成します。
+    ```bash
+    npx prisma generate
+    ```
+</Steps>
+
+<Aside type="tip">
+`npx prisma studio` コマンドを実行すると、ブラウザでデータベースの中身を直接見たり編集したりできるツールが起動します。開発中にデータを確認するのに便利です。
+</Aside>
+
+## STEP 2: APIルートの作成 (お知らせCRUD)
+
+次に、フロントエンドからのリクエストに応じてデータベースを操作するAPIの窓口を作ります。
+Next.jsのApp Routerでは、`app/api/...` ディレクトリ以下に `route.ts` を作成します。
+
+### お知らせ一覧取得 (GET /api/announcements)
+`app/api/announcements/route.ts` を作成し、以下のように記述します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">app/api/announcements/route.ts (GET)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  import { NextResponse } from 'next/server';
+  import prisma from '@/lib/prisma'; // Prisma Clientのインスタンスをインポート (パスは適宜調整)
+
+  export async function GET() {
+    try {
+      const announcements = await prisma.announcement.findMany({
+        orderBy: {
+          createdAt: 'desc', // 作成日時の新しい順
+        },
+      });
+      return NextResponse.json(announcements);
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      return NextResponse.json({ error: 'お知らせの取得に失敗しました。' }, { status: 500 });
+    }
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+### お知らせ作成 (POST /api/announcements)
+同じく `app/api/announcements/route.ts` に追記します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">app/api/announcements/route.ts (POST)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```ts
+  // (GET関数の下に追記)
+  export async function POST(request: Request) {
+    try {
+      const { title, content } = await request.json();
+
+      if (!title || !content) {
+        return NextResponse.json({ error: 'タイトルと内容は必須です。' }, { status: 400 });
+      }
+
+      const newAnnouncement = await prisma.announcement.create({
+        data: {
+          title,
+          content,
+        },
+      });
+      return NextResponse.json(newAnnouncement, { status: 201 });
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      return NextResponse.json({ error: 'お知らせの作成に失敗しました。' }, { status: 500 });
+    }
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+<Aside type="note">
+同様に、お知らせの詳細取得 (`GET /api/announcements/[id]`)、更新 (`PUT /api/announcements/[id]`)、削除 (`DELETE /api/announcements/[id]`) のためのAPIルートも作成します。
+詳細な実装は、[Next.jsのドキュメント](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)やPrismaのドキュメントを参考に挑戦してみましょう。不明な点はContext7も活用してください。
+</Aside>
+
+## STEP 3: フロントエンドUIの作成 (Reactコンポーネント)
+
+APIができたので、次はお知らせを表示したり操作したりするための画面を作ります。
+
+### お知らせ一覧ページ (`app/announcements/page.tsx`)
+サーバーコンポーネントとして、APIからお知らせ一覧を取得して表示します。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">app/announcements/page.tsx</Fragment>
+  <Fragment slot="tab-1-content">
+  ```tsx
+  import Link from 'next/link';
+
+  async function getAnnouncements() {
+    // 開発環境では 'http://localhost:3000' など、環境に応じてURLを調整
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/announcements`, {
+      cache: 'no-store', // キャッシュせずに常に最新を取得
+    });
+    if (!res.ok) {
+      throw new Error('お知らせの取得に失敗しました');
+    }
+    return res.json();
+  }
+
+  export default async function AnnouncementsPage() {
+    const announcements = await getAnnouncements();
+
+    return (
+      <div>
+        <h1>お知らせ一覧</h1>
+        <Link href="/announcements/new" className="btn btn-primary mb-4">
+          新しいお知らせを作成
+        </Link>
+        {announcements.length === 0 ? (
+          <p>お知らせはありません。</p>
+        ) : (
+          <ul>
+            {announcements.map((announcement: any) => ( // 型は適宜定義
+              <li key={announcement.id} className="mb-2 border p-2 rounded">
+                <Link href={`/announcements/${announcement.id}`}>
+                  <h2 className="text-xl font-bold">{announcement.title}</h2>
+                </Link>
+                <p className="text-sm text-gray-500">
+                  {new Date(announcement.createdAt).toLocaleDateString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+### お知らせ作成ページ (`app/announcements/new/page.tsx`)
+お知らせを作成するためのフォームを表示し、入力されたデータをAPIに送信します。フォーム操作はクライアントコンポーネントで行います。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">src/components/AnnouncementForm.tsx (クライアントコンポーネント)</Fragment>
+  <Fragment slot="tab-1-content">
+  ```tsx
+  'use client';
+  import { useState } from 'react';
+  import { useRouter } from 'next/navigation'; // App Router用のルーター
+
+  export default function AnnouncementForm({ announcement }: { announcement?: any }) { // announcementは編集時に渡す
+    const router = useRouter();
+    const [title, setTitle] = useState(announcement?.title || '');
+    const [content, setContent] = useState(announcement?.content || '');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
+
+      const method = announcement ? 'PUT' : 'POST';
+      const url = announcement
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/announcements/${announcement.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/announcements`;
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || '処理に失敗しました。');
+        }
+        router.push('/announcements'); // 一覧ページへリダイレクト
+        router.refresh(); // サーバーコンポーネントのデータを再取得 (重要)
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium">タイトル</label>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="input input-bordered w-full"
+          />
+        </div>
+        <div>
+          <label htmlFor="content" className="block text-sm font-medium">内容</label>
+          <textarea
+            id="content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            rows={5}
+            className="textarea textarea-bordered w-full"
+          />
+        </div>
+        {error && <p className="text-red-500">{error}</p>}
+        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+          {isLoading ? '送信中...' : (announcement ? '更新' : '作成')}
+        </button>
+      </form>
+    );
+  }
+  ```
+  </Fragment>
+  <Fragment slot="tab-2-label">app/announcements/new/page.tsx</Fragment>
+  <Fragment slot="tab-2-content">
+  ```tsx
+  import AnnouncementForm from '@/components/AnnouncementForm'; // パスは適宜調整
+
+  export default function NewAnnouncementPage() {
+    return (
+      <div>
+        <h1>新しいお知らせを作成</h1>
+        <AnnouncementForm />
+      </div>
+    );
+  }
+  ```
+  </Fragment>
+</CodePreviewTabs>
+
+<Aside type="note">
+同様に、お知らせ詳細ページ (`app/announcements/[id]/page.tsx`)、編集ページ (`app/announcements/[id]/edit/page.tsx`)、削除ボタンの機能なども実装していきます。
+詳細ページでは、サーバーコンポーネントでIDに基づいてお知らせデータを取得し表示します。
+編集ページでは、詳細ページからデータを取得し、`AnnouncementForm` に初期値として渡して再利用します。
+削除は、詳細ページや一覧ページに削除ボタンを設け、クリック時にAPIを呼び出すクライアントコンポーネントとして実装します。
+</Aside>
+
+## STEP 4: 動作確認と発展
+
+-   作成したページやAPIが意図通りに動くか、ブラウザで実際に操作して確認しましょう。
+-   入力バリデーション（タイトルが空でないかなど）や、より親切なエラー表示を追加してみましょう。
+-   ローディング状態の表示を工夫してみましょう。
+
+## まとめ
+
+このページでは、お知らせ機能という具体的な例を通して、フルスタック開発の基本的な流れを体験しました。
+-   Prismaでデータベースのスキーマを定義し、マイグレーションを実行。
+-   Next.jsのApp RouterでAPIルートを作成し、Prisma Clientでデータベースを操作。
+-   Reactのサーバーコンポーネントとクライアントコンポーネントを使い分けてUIを構築。
+
+最初は難しく感じるかもしれませんが、一つ一つのステップを丁寧にこなし、実際に手を動かすことで理解が深まります。
+エラーが出ても焦らず、エラーメッセージを読んだり、[用語集](/getstart/term)や他のドキュメントを参照したり、チームメンバーに相談したりしながら解決していきましょう。
+
+次は、[デザイン開発の実践](/web-practice/design)に進んで、見た目を整えるスキルを磨きましょう！

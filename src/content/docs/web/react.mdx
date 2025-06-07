@@ -1,0 +1,249 @@
+---
+title: Reactの基礎
+description: Webページの見た目を部品のように組み立てる「React」の基本的な考え方と使い方をやさしく解説します。
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro'; // 相対パスを修正
+
+## Reactってなんだろう？
+
+React（リアクト）は、Webサイトの見た目、つまりユーザーインターフェース（UI）を作るためのJavaScriptライブラリ（便利な道具箱のようなもの）です。
+Facebook社（現Meta社）が開発し、世界中の多くのWebサイトやアプリで使われています。「あしたぼホームページ」のキラキラした見た目も、このReactを使って作られています！
+
+Reactの最大の特徴は、**コンポーネントベース**であることです。
+これは、UIを「ボタン」「ヘッダー」「記事カード」といった独立した「部品（コンポーネント）」として作り、それらを組み合わせて大きなページを構築していく考え方です。
+
+{/* ここに「レゴブロックのようにUI部品を組み合わせてページを作るイメージ図」を挿入 */}
+{/* 例：ヘッダー部品 + サイドバー部品 + 記事リスト部品 = Webページ */}
+
+### なぜReactを使うの？
+
+-   **再利用性が高い**: 一度作った部品（コンポーネント）は、色々な場所で何度も使い回せます。同じようなボタンを何度も作らなくて済むんです！
+-   **管理しやすい**: ページ全体を一度に考えるのではなく、小さな部品ごとに分けて開発できるので、複雑なUIでも整理しやすく、間違いも見つけやすくなります。
+-   **効率的な更新**: Reactは賢いので、データが変更されたときに、ページ全体を描き直すのではなく、変更があった部分だけを効率的に更新してくれます。これにより、Webサイトがサクサク動きます。
+
+## Reactコンポーネントの基本構造
+
+Reactのコンポーネントは、基本的には「UI（見た目）を返すJavaScriptの関数」です。
+「あしたぼホームページ」ではTypeScriptを使っているので、TypeScriptの関数として書かれます。
+
+```tsx
+// 必要なものをReactライブラリからインポート(読み込み)
+import React from 'react';
+
+// MyButtonという名前のコンポーネントを定義
+// propsという名前のオブジェクトでデータを受け取れる (後で説明します)
+function MyButton(props) {
+  // このコンポーネントが画面に表示する内容を返す
+  // HTMLに似たJSXという書き方を使います
+  return (
+    <button style={{ backgroundColor: props.color }}>
+      {props.label}
+    </button>
+  );
+}
+
+// 他のファイルでこのMyButtonコンポーネントを使えるようにエクスポート(公開)
+export default MyButton;
+```
+
+**主要なポイント:**
+
+1.  **`import React from 'react';`**: Reactを使うためには、まずReactライブラリを読み込む必要があります。
+2.  **関数コンポーネント**: `function MyButton(props) { ... }` のように、関数としてコンポーネントを定義します。関数名は大文字で始めるのがReactの慣習です（例: `MyButton`）。
+3.  **JSX**: `return (...)` の中で書かれているHTMLのようなものはJSX（JavaScript XML）と呼ばれる構文です。JavaScriptの中でUIの構造を直感的に記述できます。
+    -   HTMLとほぼ同じように書けますが、いくつかの違いがあります（例: `class` は `className`、`for` は `htmlFor` と書くなど）。
+    -   波括弧 `{}` を使うと、JSXの中にJavaScriptの式（変数や関数の呼び出しなど）を埋め込むことができます。上の例では `{props.label}` で `label` というデータを表示しています。
+4.  **`export default MyButton;`**: 作成したコンポーネントを他のファイルでも使えるように「エクスポート（公開）」します。Next.jsのページコンポーネント (`page.tsx`) などでは、この `export default` が必須です。
+
+<Aside type="note">
+Next.jsのApp Routerでは、コンポーネントがサーバーで実行されるかクライアント（ブラウザ）で実行されるかを意識する必要があります。ボタンのクリックに反応したり、入力に応じて表示が変わったりするようなインタラクティブな機能を持つコンポーネントは、ファイルの先頭に `'use client';` と書くことで「クライアントコンポーネント」として扱われます。
+</Aside>
+
+## Props: コンポーネントにデータを渡す魔法の杖
+
+Props（プロパティの略）を使うと、親コンポーネントから子コンポーネントへ情報を渡すことができます。
+これにより、同じコンポーネントでも渡すデータによって表示内容や振る舞いを変えることができます。
+
+先ほどの `MyButton` コンポーネントを使う側（親コンポーネント）のコードを見てみましょう。
+
+```tsx
+import MyButton from './MyButton'; // MyButtonコンポーネントをインポート
+
+function App() {
+  return (
+    <div>
+      <MyButton label="赤いボタン" color="red" />
+      <MyButton label="青いボタン" color="blue" />
+    </div>
+  );
+}
+export default App;
+```
+この例では、`App` コンポーネントから `MyButton` コンポーネントに対して、`label` と `color` という名前でデータを渡しています。
+`MyButton` コンポーネントは、`props.label` や `props.color` としてこれらのデータを受け取り、ボタンのテキストや背景色に使っています。
+
+{/* ここに「Propsを使ってカスタマイズされた複数のMyButtonが表示されているイメージ図」を挿入 */}
+
+## State: コンポーネントが覚える記憶 (`useState`)
+
+State（状態）は、コンポーネントが内部で保持し、時間とともに変化する可能性のあるデータのことです。
+例えば、カウンターの現在の数、入力フォームに入力された文字、トグルボタンのON/OFFの状態などがStateにあたります。
+Reactでは、`useState` という特別な関数（フックと呼びます）を使ってStateを管理します。
+
+### カウンターの例
+
+ボタンをクリックすると数字が増える簡単なカウンターを作ってみましょう。
+
+<CodePreviewTabs>
+  <Fragment slot="tab-1-label">Counter.tsx</Fragment>
+  <Fragment slot="tab-1-content">
+    ```tsx
+    'use client'; // useStateを使うのでクライアントコンポーネント
+
+    import React, { useState } from 'react';
+
+    function Counter() {
+      // 'count' という名前のState変数を宣言。初期値は0。
+      // 'setCount' は 'count' を更新するための関数。
+      const [count, setCount] = useState(0);
+
+      function handleClick() {
+        setCount(count + 1); // countの値を1増やす
+      }
+
+      return (
+        <div>
+          <p>現在のカウント: {count}</p>
+          <button onClick={handleClick}>カウントアップ</button>
+        </div>
+      );
+    }
+    export default Counter;
+    ```
+  </Fragment>
+  <Fragment slot="tab-2-label">プレビューのイメージ</Fragment>
+  <Fragment slot="tab-2-content">
+    <div>
+      <p>現在のカウント: 0</p>
+      <button>カウントアップ</button>
+      {/* ボタンを押すと「現在のカウント: 1」のように表示が変わる */}
+    </div>
+  </Fragment>
+</CodePreviewTabs>
+
+**`useState` の使い方:**
+1.  `import { useState } from 'react';` で `useState` フックをインポートします。
+2.  `const [stateVariable, setStateFunction] = useState(initialValue);` のように書きます。
+    -   `stateVariable`: 現在の状態の値を保持する変数（例: `count`）。
+    -   `setStateFunction`: 状態を更新するための関数（例: `setCount`）。この関数を呼び出すと、Reactはコンポーネントを再レンダリング（再描画）し、画面の表示を更新します。
+    -   `initialValue`: 状態の初期値（例: `0`）。
+
+<Aside type="caution">
+Stateを更新する際は、必ず `setCount(newValue)` のように **State更新関数を経由して**行います。`count = count + 1;` のように直接State変数を変更しても、Reactは変更を検知できず、画面は更新されません。
+</Aside>
+
+## イベント処理: ユーザーの操作に反応する
+
+ボタンのクリック、マウスの動き、キーボード入力など、ユーザーの操作（イベント）に反応して何か処理を行うのもReactの得意技です。
+JSXの中で、`onClick` や `onChange` といったイベントハンドラ属性を使って、イベントが発生したときに実行する関数を指定します。
+
+```tsx
+'use client';
+import React from 'react';
+
+function AlertButton() {
+  function handleButtonClick() {
+    alert('ボタンがクリックされました！');
+  }
+
+  function handleInputChange(event) {
+    console.log('入力内容:', event.target.value); // 入力された値をコンソールに出力
+  }
+
+  return (
+    <div>
+      <button onClick={handleButtonClick}>クリックしてね</button>
+      <input type="text" onChange={handleInputChange} placeholder="何か入力してね" />
+    </div>
+  );
+}
+export default AlertButton;
+```
+-   `onClick={handleButtonClick}`: ボタンがクリックされたら `handleButtonClick` 関数を実行します。
+-   `onChange={handleInputChange}`: input要素の内容が変更されたら `handleInputChange` 関数を実行します。イベント処理関数は、引数としてイベントオブジェクト (`event`) を受け取ることができ、`event.target.value` で入力値などを取得できます。
+
+## 条件付きレンダリング: 場合によって表示を変える
+
+特定の条件に応じて、表示する内容を変えたい場合もよくあります。
+JavaScriptの `if` 文や三項演算子 (`condition ? trueValue : falseValue`)、論理AND演算子 (`condition && expression`) などを使って実現できます。
+
+```tsx
+'use client';
+import React, { useState } from 'react';
+
+function Greeting({ isLoggedIn }) {
+  if (isLoggedIn) {
+    return <p>ようこそ、ユーザーさん！</p>;
+  }
+  return <p>ログインしてください。</p>;
+}
+
+function LoginControl() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  return (
+    <div>
+      <Greeting isLoggedIn={isLoggedIn} />
+      {isLoggedIn
+        ? <button onClick={() => setIsLoggedIn(false)}>ログアウト</button>
+        : <button onClick={() => setIsLoggedIn(true)}>ログイン</button>
+      }
+    </div>
+  );
+}
+export default LoginControl;
+```
+
+## リストとキー: データを一覧表示する
+
+配列データを元に、複数の要素を繰り返し表示することもよくあります。JavaScriptの `map()` メソッドを使います。
+リスト項目をレンダリングする際には、各項目にユニークな `key` propを指定することが非常に重要です。Reactが各項目を効率的に識別し、更新するために必要です。
+
+```tsx
+import React from 'react';
+
+const products = [
+  { id: 1, name: 'りんご', price: 100 },
+  { id: 2, name: 'バナナ', price: 80 },
+  { id: 3, name: 'みかん', price: 120 },
+];
+
+function ProductList() {
+  const listItems = products.map(product =>
+    <li key={product.id}>
+      {product.name}: {product.price}円
+    </li>
+  );
+
+  return (
+    <ul>{listItems}</ul>
+  );
+}
+export default ProductList;
+```
+
+## まとめ
+
+-   ReactはUIを**コンポーネント**という部品の組み合わせで作ります。
+-   **JSX**を使うと、JavaScriptの中にHTMLのようにUI構造を書けます。
+-   **Props**を使って、親から子へデータを渡せます。
+-   **State (`useState`)** を使って、コンポーネントが持つ変化するデータを管理します。
+-   **イベントハンドラ** (`onClick`など) でユーザーの操作に反応します。
+-   条件によって表示を変えたり (条件付きレンダリング)、データのリストを表示したりもできます。
+
+Reactの基本はここまでです。最初は覚えることが多く感じるかもしれませんが、実際に手を動かしてコンポーネントを作ってみると、だんだん楽しくなってくるはずです！
+分からない言葉が出てきたら、[用語集](/getstart/term)も活用してくださいね。
+
+次は、Reactをさらに便利に使うためのフレームワーク、[Next.jsの基礎](./nextjs)について学びましょう。

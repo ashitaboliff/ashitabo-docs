@@ -1,0 +1,129 @@
+---
+title: 応用フルスタック開発 (あしたぼホームページ機能拡張)
+description: 認証、データベースリレーション、サーバーアクションを活用し、「あしたぼホームページ」に新しい機能を追加する課題に挑戦します。
+---
+
+import { Aside, Steps, Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
+
+## はじめに
+
+「Web開発応用編（座学）」で学んだ高度な技術を使い、「あしたぼホームページ」に実際に新しい機能を追加したり、既存機能を改善したりする課題に挑戦しましょう。
+このページでは、特に認証と連携したデータ操作や、より複雑なバックエンドロジックの実装に焦点を当てます。
+
+**挑戦するテーマ例:**
+「あしたぼホームページ」のお知らせ機能に、ユーザーがコメントを投稿できる機能を追加し、自分のコメントのみ編集・削除できるようにする。
+
+**活用する主な技術:**
+-   Auth.js (ユーザー認証、セッション管理)
+-   Prisma (データベース操作、UserモデルとCommentモデルのリレーション)
+-   Next.js App Router (APIルートまたはサーバーアクション)
+-   React (Server Components & Client Components)
+-   TypeScript
+
+{/* ここに「お知らせ詳細ページにコメント欄が追加されたイメージ図」を挿入 */}
+
+## CHALLENGE: お知らせにコメント機能を追加しよう！
+
+### 要件
+
+1.  **コメント投稿**:
+    -   ログインしているユーザーのみが、各お知らせ記事に対してコメントを投稿できる。
+    -   コメント内容はテキスト形式。
+2.  **コメント表示**:
+    -   各お知らせ記事の下に、投稿されたコメントが時系列（新しい順または古い順）で表示される。
+    -   各コメントには投稿者の名前（または匿名）と投稿日時が表示される。
+3.  **コメント編集・削除**:
+    -   ログインしているユーザーは、自分自身が投稿したコメントのみ編集または削除できる。
+    -   他のユーザーのコメントは編集・削除できない。
+4.  **データモデル (Prisma)**:
+    -   `User` モデル (Auth.jsが利用するものを想定)
+    -   `Announcement` モデル ([フルスタック開発体験](/web-practice/fullstack)で作成したものを想定)
+    -   `Comment` モデル (`id`, `content`, `createdAt`, `updatedAt`, `authorId` (Userへのリレーション), `announcementId` (Announcementへのリレーション))
+5.  **UI**:
+    -   お知らせ詳細ページにコメント投稿フォームとコメント一覧表示エリアを設ける。
+    -   自分のコメントには編集ボタンと削除ボタンを表示する。
+
+### 実装ステップの提案
+
+<Steps>
+1.  **Prismaスキーマ更新とマイグレーション**
+    -   `prisma/schema.prisma` に `Comment` モデルを追加し、`User` モデルおよび `Announcement` モデルとのリレーションを定義します。
+        ```prisma
+        model User {
+          // ... Auth.jsのフィールド ...
+          comments Comment[] // このユーザーが投稿したコメント
+        }
+
+        model Announcement {
+          // ... 既存のフィールド ...
+          comments Comment[] // このお知らせに紐づくコメント
+        }
+
+        model Comment {
+          id             Int      @id @default(autoincrement())
+          content        String
+          createdAt      DateTime @default(now())
+          updatedAt      DateTime @updatedAt
+          author         User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+          authorId       String   // Userモデルのidの型に合わせる
+          announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+          announcementId Int
+        }
+        ```
+    -   ターミナルで `npx prisma migrate dev --name add-comment-model` を実行し、マイグレーションします。
+    -   `npx prisma generate` を実行してPrisma Clientを更新します。
+
+2.  **コメント用APIルートまたはサーバーアクションの作成**
+    -   コメントの作成 (`POST /api/announcements/[id]/comments` または `createComment` サーバーアクション)。
+        -   リクエストボディからコメント内容 (`content`) を受け取る。
+        -   認証状態を確認し、ログインユーザーのID (`session.user.id`) を `authorId` として保存。
+        -   対象のお知らせID (`announcementId`) も適切に設定。
+    -   コメントの更新 (`PUT /api/comments/[commentId]` または `updateComment` サーバーアクション)。
+        -   コメントの所有者（投稿者）であるかを確認してから更新処理を行う。
+    -   コメントの削除 (`DELETE /api/comments/[commentId]` または `deleteComment` サーバーアクション)。
+        -   コメントの所有者であるかを確認してから削除処理を行う。
+    -   (お知らせ詳細取得API (`GET /api/announcements/[id]`) を修正し、関連するコメントも一緒に取得できるようにする (`include: { comments: { include: { author: true } } }` など))
+
+3.  **フロントエンドUIの実装**
+    -   **コメント一覧表示コンポーネント (`src/components/CommentList.tsx`など)**:
+        -   お知らせ詳細ページ (`app/announcements/[id]/page.tsx`) 内で、取得したコメントデータを元に一覧表示。
+        -   各コメントに投稿者名、投稿日時、内容を表示。
+        -   現在のログインユーザーがコメントの投稿者であれば、編集ボタンと削除ボタンを表示。
+    -   **コメント投稿フォームコンポーネント (`src/components/CommentForm.tsx`など)**:
+        -   クライアントコンポーネントとして作成。
+        -   ログインしている場合のみ表示。
+        -   入力されたコメント内容をAPIまたはサーバーアクションに送信。
+        -   投稿成功後、コメント一覧を再読み込み（または楽観的更新）。
+    -   **コメント編集機能**:
+        -   編集ボタンクリックで、インライン編集UIを表示するか、編集用モーダルを開く。
+        -   編集内容をAPIまたはサーバーアクションに送信。
+
+4.  **お知らせ詳細ページへの組み込み**
+    -   `app/announcements/[id]/page.tsx` (サーバーコンポーネント) で、お知らせデータと共に関連コメントも取得。
+    -   取得したコメントデータを `CommentList` コンポーネントに渡す。
+    -   `CommentForm` コンポーネントを配置。
+
+5.  **テストとデバッグ**
+    -   異なるユーザーでログインし、コメントの投稿、編集、削除が正しく制御されているか確認。
+    -   認証していない状態でコメント関連の操作ができないことを確認。
+    -   入力バリデーションやエラーハンドリング。
+
+</Steps>
+
+### 発展課題 (任意)
+
+-   コメントへの返信機能（ネストされたコメント）。
+-   コメントへの「いいね！」機能。
+-   コメントのページネーション。
+-   不適切なコメントを報告する機能。
+
+## まとめ
+
+この応用実践課題では、既存の機能に認証を絡めた新しい機能を追加する、というより実践的な開発フローを体験しました。
+ユーザー認証、データベースのリレーション、API設計、そしてフロントエンドでの条件分岐やデータ操作など、多くの要素が絡み合って一つの機能が成り立っていることを実感できたのではないでしょうか。
+
+特に重要なのは、**セキュリティとデータ整合性**です。誰がどのデータにアクセスでき、何を操作できるのかを常に意識し、バックエンド（APIやサーバーアクション）で適切なチェックを行うことが不可欠です。
+
+この課題で得た経験を活かし、「あしたぼホームページ」をさらに便利で魅力的なものにしていきましょう！
+もし行き詰まったら、[応用編の各座学ページ](/web-advanced/)を復習したり、公式ドキュメントを参照したり、チームメンバーに相談したりすることを恐れないでください。
