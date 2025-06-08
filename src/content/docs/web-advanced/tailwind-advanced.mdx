@@ -22,69 +22,7 @@ import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
 `theme` オブジェクト内で、色、フォント、スペーシング、ブレークポイントなど、デザインシステムのあらゆる側面をカスタマイズできます。
 `theme.extend` を使うと、Tailwindのデフォルト設定を保持しつつ、新しい値を追加したり一部を上書きしたりできます。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">tailwind.config.ts (カスタマイズ例)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```ts
-  // tailwind.config.ts
-  import type { Config } from 'tailwindcss';
-
-  const config: Config = {
-    content: ['./src/**/**/*.{js,ts,jsx,tsx,mdx}'],
-    theme: {
-      // デフォルトを上書きしたい場合はここに直接書く
-      // screens: { // 例: デフォルトのブレークポイントを完全に置き換える
-      //   'tablet': '640px',
-      //   'laptop': '1024px',
-      // },
-      extend: { // デフォルトを拡張する場合
-        colors: {
-          'brand-primary': '#FF6B6B',
-          'brand-secondary': '#4ECDC4',
-          'custom-gray': {
-            100: '#f7fafc',
-            // ...
-            900: '#1a202c',
-          },
-        },
-        spacing: {
-          '72': '18rem', // 72 * 0.25rem = 18rem
-          '84': '21rem',
-          '96': '24rem',
-        },
-        fontFamily: {
-          // 基礎編で触れたカスタムフォント設定
-          nicoMoji: ['var(--nicomoji)', 'sans-serif'],
-          notojp: ['var(--font-noto-jp)', 'sans-serif'],
-        },
-        animation: {
-          'spin-slow': 'spin 3s linear infinite',
-          'bounce-custom': 'bounce 1s infinite alternate',
-        },
-        keyframes: {
-          bounce: { // bounceアニメーションをカスタマイズ (例)
-            '0%, 100%': {
-              transform: 'translateY(-15%)',
-              animationTimingFunction: 'cubic-bezier(0.8,0,1,1)',
-            },
-            '50%': {
-              transform: 'none',
-              animationTimingFunction: 'cubic-bezier(0,0,0.2,1)',
-            },
-          },
-        },
-      },
-    },
-    plugins: [
-      // require('@tailwindcss/typography'),
-      // require('daisyui'),
-    ],
-    // daisyui: { themes: [...] }
-  };
-  export default config;
-  ```
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/tailwindcss/tailwind.config.theme-customization.ts" />
 **主なカスタマイズ項目:**
 -   `colors`: プロジェクト独自のブランドカラーや、既存の色のバリエーションを追加できます。
 -   `spacing`: `p-`, `m-`, `w-`, `h-` などで使われるスペーシングの単位を追加・変更できます。
@@ -108,50 +46,36 @@ Tailwind CSSの機能を拡張するためにプラグインを利用したり�
 -   **`@tailwindcss/aspect-ratio`**: 要素のアスペクト比を簡単に制御できるユーティリティを提供します。
 -   **daisyUI**: [基礎編](/web/tailwind#daisyui-tailwind-cssをもっと便利に)で紹介したように、コンポーネントクラスを提供します。
 
-これらのプラグインは `npm install` で追加し、`tailwind.config.ts` の `plugins` 配列に `require()` で読み込みます。
+これらのプラグインは `npm install` で追加し、メインのCSSファイル（例: `src/assets/app.css`）で `@plugin` ディレクティブを使って読み込みます。
+例えば、daisyUIの場合は `@plugin "daisyui";` のように記述します。
 
-### カスタムプラグインの作成
+### カスタムユーティリティとプラグインの作成 (Tailwind CSS v4)
 
-独自のユーティリティやコンポーネントクラス、基本スタイルを追加したい場合、カスタムプラグインを作成できます。
+Tailwind CSS v4では、カスタムユーティリティをCSSファイル内で `@utility` APIを使って定義することが推奨されています。
+また、より複雑なロジックやJavaScriptの機能を使いたい場合は、従来通り `tailwind.config.ts` の `plugins` 配列に関数を追加してカスタムプラグインを作成することも可能です。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">カスタムプラグイン (例)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```javascript
-  // tailwind.config.ts の plugins 部分
-  const plugin = require('tailwindcss/plugin');
+**CSS内での `@utility` API の例:**
+```css
+/* src/assets/app.css など */
+@import "tailwindcss"; /* prefix(tw) などもここで指定 */
+@plugin "daisyui";
 
-  module.exports = {
-    // ...
-    plugins: [
-      plugin(function({ addUtilities, addComponents, theme }) {
-        const newUtilities = {
-          '.skew-10deg': {
-            transform: 'skewY(-10deg)',
-          },
-          '.skew-15deg': {
-            transform: 'skewY(-15deg)',
-          },
-        };
-        addUtilities(newUtilities, ['responsive', 'hover']); // バリアントも指定可能
+@utility tab-4 {
+  tab-size: 4;
+}
 
-        const buttons = {
-          '.btn-orange': {
-            backgroundColor: theme('colors.orange.500'),
-            color: '#fff',
-            '&:hover': {
-              backgroundColor: theme('colors.orange.700'),
-            },
-            // ...paddingやborderRadiusなど
-          },
-        };
-        addComponents(buttons);
-      }),
-    ],
-  };
-  ```
-  </Fragment>
-</CodePreviewTabs>
+@utility text-balance {
+  text-wrap: balance;
+}
+
+/* 既存の .skew-10deg のようなユーティリティも @utility で定義可能 */
+@utility skew-10deg {
+  transform: skewY(-10deg);
+}
+```
+
+**従来の `tailwind.config.ts` でのカスタムプラグイン作成例:**
+<CodePreviewTabs filePath="src/components/code_examples/tailwindcss/CustomPluginExample.js" />
 -   `addUtilities()`: 新しいユーティリティクラスを追加します。
 -   `addComponents()`: 新しいコンポーネントクラス（複数のスタイルをまとめたもの）を追加します。
 -   `addBase()`: 基本的なHTML要素のスタイル（`body`, `h1`など）を追加・変更します。
@@ -164,46 +88,13 @@ Tailwind CSSのユーティリティクラスを組み合わせることで、�
 
 ### 例: レスポンシブなナビゲーションバー
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">ナビゲーションバー (HTML + Tailwind)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```html
-  <nav class="bg-gray-800 p-4">
-    <div class="container mx-auto flex items-center justify-between">
-      <div class="text-white font-bold text-xl">ロゴ</div>
-      {/* モバイル用ハンバーガーメニューボタン (JSでの制御が必要) */}
-      <div class="md:hidden">
-        <button id="mobile-menu-button" class="text-white focus:outline-none">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-        </button>
-      </div>
-      {/* PC用ナビゲーションリンク */}
-      <div id="desktop-menu" class="hidden md:flex space-x-4">
-        <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">ホーム</a>
-        <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">サービス</a>
-        <a href="#" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">会社概要</a>
-      </div>
-    </div>
-    {/* モバイル用メニュー (JSで表示/非表示を切り替え) */}
-    <div id="mobile-menu" class="hidden md:hidden mt-2">
-      <a href="#" class="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">ホーム</a>
-      <a href="#" class="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">サービス</a>
-      <a href="#" class="block text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md">会社概要</a>
-    </div>
-  </nav>
-
-  <script>
-    // 簡単なメニュー開閉のJavaScript例
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-    const mobileMenu = document.getElementById('mobile-menu');
-    mobileMenuButton.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-    });
-  </script>
-  ```
-  </Fragment>
-</CodePreviewTabs>
-この例では、`md:` プレフィックスを使って画面幅に応じて表示を切り替え、Flexbox (`flex`, `items-center`, `justify-between`) で要素を配置しています。
+<Aside type="note">
+このドキュメントサイトでは、Starlightのスタイルとの競合を避けるため、Tailwind CSSのクラス名に `tw:` というプレフィックスを付けています（例: `tw:bg-gray-800`）。
+そのため、以下のコード例のプレビューで実際にスタイルを適用するには、HTML内のクラス名に `tw:` を付ける必要があります。
+実際の「あしたぼホームページ」のコードでは、この `tw:` プレフィックスは不要です。
+</Aside>
+<CodePreviewTabs filePath="src/components/code_examples/html/ResponsiveNavbar.html" />
+この例では、`md:` プレフィックスを使って画面幅に応じて表示を切り替え、Flexbox (`tw:flex`, `tw:items-center`, `tw:justify-between`) で要素を配置しています。
 モバイルメニューの開閉にはJavaScriptが必要になります。React環境では `useState` を使って表示状態を管理します。
 
 ## `@apply` ディレクティブの注意点
@@ -212,7 +103,7 @@ CSSファイル内で、複数のユーティリティクラスをまとめて1�
 ```css
 /* styles.css */
 .btn-custom-blue {
-  @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
+  @apply tw:bg-blue-500 hover:tw:bg-blue-700 tw:text-white tw:font-bold tw:py-2 tw:px-4 tw:rounded; /* このドキュメントでは tw: が必要 */
 }
 ```
 HTMLでは `<button class="btn-custom-blue">ボタン</button>` と書けます。

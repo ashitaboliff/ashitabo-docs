@@ -19,7 +19,7 @@ import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
 -   お知らせの削除 (Delete)
 
 **使う主な技術:**
--   **Next.js (App Router)**: ページの骨組み、APIの窓口
+-   **Next.js (App Router, Server Actions)**: ページの骨組み、サーバーサイドロジック
 -   **React (Server & Client Components)**: 見た目の部品作り
 -   **TypeScript**: 安全なコード記述
 -   **Prisma**: データベースとのやり取りを簡単にする道具
@@ -81,250 +81,81 @@ import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
 `npx prisma studio` コマンドを実行すると、ブラウザでデータベースの中身を直接見たり編集したりできるツールが起動します。開発中にデータを確認するのに便利です。
 </Aside>
 
-## STEP 2: APIルートの作成 (お知らせCRUD)
+## STEP 2: データ操作層の作成 (Repository & Server Actions)
 
-次に、フロントエンドからのリクエストに応じてデータベースを操作するAPIの窓口を作ります。
-Next.jsのApp Routerでは、`app/api/...` ディレクトリ以下に `route.ts` を作成します。
+次に、データベースとのやり取りを行う「リポジトリ層」と、それを呼び出してフロントエンドからのリクエストを処理する「サーバーアクション層」を作成します。
+「あしたぼホームページ」では、機能をまとめた `features` ディレクトリ内にこれらを配置する「Package by Feature」の考え方を採用しています。
 
-### お知らせ一覧取得 (GET /api/announcements)
-`app/api/announcements/route.ts` を作成し、以下のように記述します。
+### リポジトリ層 (`src/features/announcement/lib/repository.ts` のイメージ)
+データベース操作をカプセル化し、Prisma Clientを直接使います。必要に応じて `unstable_cache` でキャッシュ戦略を実装します。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">app/api/announcements/route.ts (GET)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```ts
-  import { NextResponse } from 'next/server';
-  import prisma from '@/lib/prisma'; // Prisma Clientのインスタンスをインポート (パスは適宜調整)
-
-  export async function GET() {
-    try {
-      const announcements = await prisma.announcement.findMany({
-        orderBy: {
-          createdAt: 'desc', // 作成日時の新しい順
-        },
-      });
-      return NextResponse.json(announcements);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-      return NextResponse.json({ error: 'お知らせの取得に失敗しました。' }, { status: 500 });
-    }
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
-
-### お知らせ作成 (POST /api/announcements)
-同じく `app/api/announcements/route.ts` に追記します。
-
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">app/api/announcements/route.ts (POST)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```ts
-  // (GET関数の下に追記)
-  export async function POST(request: Request) {
-    try {
-      const { title, content } = await request.json();
-
-      if (!title || !content) {
-        return NextResponse.json({ error: 'タイトルと内容は必須です。' }, { status: 400 });
-      }
-
-      const newAnnouncement = await prisma.announcement.create({
-        data: {
-          title,
-          content,
-        },
-      });
-      return NextResponse.json(newAnnouncement, { status: 201 });
-    } catch (error) {
-      console.error("Error creating announcement:", error);
-      return NextResponse.json({ error: 'お知らせの作成に失敗しました。' }, { status: 500 });
-    }
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
-
+<CodePreviewTabs filePath="src/components/code_examples/prisma/announcementRepository.ts" />
 <Aside type="note">
-同様に、お知らせの詳細取得 (`GET /api/announcements/[id]`)、更新 (`PUT /api/announcements/[id]`)、削除 (`DELETE /api/announcements/[id]`) のためのAPIルートも作成します。
-詳細な実装は、[Next.jsのドキュメント](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)やPrismaのドキュメントを参考に挑戦してみましょう。不明な点はContext7も活用してください。
+上記コード例では、実際の `prisma` や `unstable_cache` の代わりにダミーオブジェクトを使用しています。
+実際のプロジェクトでは、`@/lib/prisma` や `next/cache` からインポートしてください。
+</Aside>
+
+### サーバーアクション層 (`src/features/announcement/lib/actions.ts` のイメージ)
+リポジトリ層の関数を呼び出し、データのバリデーション、キャッシュの再検証 (`revalidateTag`, `revalidatePath`)、フロントエンドへのレスポンス形式の統一などを行います。
+
+<CodePreviewTabs filePath="src/components/code_examples/nextjs/announcementActions.ts" />
+<Aside type="note">
+上記コード例では、リポジトリ関数や型定義、共通レスポンス型などをダミーで定義しています。
+実際のプロジェクトでは、適切なパスからインポートしてください。
 </Aside>
 
 ## STEP 3: フロントエンドUIの作成 (Reactコンポーネント)
 
-APIができたので、次はお知らせを表示したり操作したりするための画面を作ります。
+サーバーアクションができたので、次はお知らせを表示したり操作したりするための画面を作ります。
 
-### お知らせ一覧ページ (`app/announcements/page.tsx`)
-サーバーコンポーネントとして、APIからお知らせ一覧を取得して表示します。
+### お知らせ一覧ページ (`app/announcements/page.tsx` のイメージ)
+サーバーコンポーネントとして、作成したサーバーアクション (`getAllAnnouncementsAction`) を呼び出して、お知らせ一覧を取得・表示します。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">app/announcements/page.tsx</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  import Link from 'next/link';
+<CodePreviewTabs filePath="src/components/code_examples/tsx/AnnouncementsPageExample.tsx" />
+<Aside type="note">
+上記コード例では、`getAnnouncements` 関数内で直接APIをフェッチする代わりに、サーバーアクションを呼び出す形に変更することを想定しています（実際のコード例ではダミーデータを使用）。
+また、`Link` コンポーネントのインポートエラーを避けるため、ダミーの `Link` を定義しています。
+</Aside>
 
-  async function getAnnouncements() {
-    // 開発環境では 'http://localhost:3000' など、環境に応じてURLを調整
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/announcements`, {
-      cache: 'no-store', // キャッシュせずに常に最新を取得
-    });
-    if (!res.ok) {
-      throw new Error('お知らせの取得に失敗しました');
-    }
-    return res.json();
-  }
+### お知らせ作成ページ (`app/announcements/new/page.tsx` のイメージ)
+お知らせを作成するためのフォームを表示し、入力されたデータをサーバーアクション (`createAnnouncementAction`) に送信します。フォーム操作はクライアントコンポーネントで行います。
 
-  export default async function AnnouncementsPage() {
-    const announcements = await getAnnouncements();
+`src/components/AnnouncementForm.tsx` (クライアントコンポーネントのイメージ):
+<CodePreviewTabs filePath="src/components/code_examples/tsx/AnnouncementFormExample.tsx" />
+<Aside type="note">
+上記コード例では、フォーム送信時にAPIを直接呼び出す代わりに、サーバーアクションをフォームの `action` 属性に渡すか、`handleSubmit` 内で呼び出す形に変更することを想定しています。
+また、`useRouter` のインポートエラーを避けるため、ダミーの `useRouter` を定義しています。
+</Aside>
 
-    return (
-      <div>
-        <h1>お知らせ一覧</h1>
-        <Link href="/announcements/new" className="btn btn-primary mb-4">
-          新しいお知らせを作成
-        </Link>
-        {announcements.length === 0 ? (
-          <p>お知らせはありません。</p>
-        ) : (
-          <ul>
-            {announcements.map((announcement: any) => ( // 型は適宜定義
-              <li key={announcement.id} className="mb-2 border p-2 rounded">
-                <Link href={`/announcements/${announcement.id}`}>
-                  <h2 className="text-xl font-bold">{announcement.title}</h2>
-                </Link>
-                <p className="text-sm text-gray-500">
-                  {new Date(announcement.createdAt).toLocaleDateString()}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    );
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
-
-### お知らせ作成ページ (`app/announcements/new/page.tsx`)
-お知らせを作成するためのフォームを表示し、入力されたデータをAPIに送信します。フォーム操作はクライアントコンポーネントで行います。
-
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">src/components/AnnouncementForm.tsx (クライアントコンポーネント)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  'use client';
-  import { useState } from 'react';
-  import { useRouter } from 'next/navigation'; // App Router用のルーター
-
-  export default function AnnouncementForm({ announcement }: { announcement?: any }) { // announcementは編集時に渡す
-    const router = useRouter();
-    const [title, setTitle] = useState(announcement?.title || '');
-    const [content, setContent] = useState(announcement?.content || '');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsLoading(true);
-      setError(null);
-
-      const method = announcement ? 'PUT' : 'POST';
-      const url = announcement
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/announcements/${announcement.id}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/announcements`;
-
-      try {
-        const res = await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, content }),
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || '処理に失敗しました。');
-        }
-        router.push('/announcements'); // 一覧ページへリダイレクト
-        router.refresh(); // サーバーコンポーネントのデータを再取得 (重要)
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium">タイトル</label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="input input-bordered w-full"
-          />
-        </div>
-        <div>
-          <label htmlFor="content" className="block text-sm font-medium">内容</label>
-          <textarea
-            id="content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-            rows={5}
-            className="textarea textarea-bordered w-full"
-          />
-        </div>
-        {error && <p className="text-red-500">{error}</p>}
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
-          {isLoading ? '送信中...' : (announcement ? '更新' : '作成')}
-        </button>
-      </form>
-    );
-  }
-  ```
-  </Fragment>
-  <Fragment slot="tab-2-label">app/announcements/new/page.tsx</Fragment>
-  <Fragment slot="tab-2-content">
-  ```tsx
-  import AnnouncementForm from '@/components/AnnouncementForm'; // パスは適宜調整
-
-  export default function NewAnnouncementPage() {
-    return (
-      <div>
-        <h1>新しいお知らせを作成</h1>
-        <AnnouncementForm />
-      </div>
-    );
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
+`app/announcements/new/page.tsx` (作成ページ本体のイメージ):
+<CodePreviewTabs filePath="src/components/code_examples/tsx/NewAnnouncementPageExample.tsx" />
+<Aside type="note">
+`AnnouncementForm` をインポートするパスは、実際のプロジェクト構造に合わせてください。
+</Aside>
 
 <Aside type="note">
-同様に、お知らせ詳細ページ (`app/announcements/[id]/page.tsx`)、編集ページ (`app/announcements/[id]/edit/page.tsx`)、削除ボタンの機能なども実装していきます。
-詳細ページでは、サーバーコンポーネントでIDに基づいてお知らせデータを取得し表示します。
-編集ページでは、詳細ページからデータを取得し、`AnnouncementForm` に初期値として渡して再利用します。
-削除は、詳細ページや一覧ページに削除ボタンを設け、クリック時にAPIを呼び出すクライアントコンポーネントとして実装します。
+同様に、お知らせ詳細ページ (`app/announcements/[id]/page.tsx`)、編集ページ (`app/announcements/[id]/edit/page.tsx`)、削除ボタンの機能なども、対応するサーバーアクションを作成し、それらを呼び出す形で実装していきます。
+-   **詳細ページ**: `getAnnouncementByIdAction(id)` を呼び出してデータを取得。
+-   **編集ページ**: `getAnnouncementByIdAction(id)` で初期データを取得し、`AnnouncementForm` に渡す。フォーム送信時には `updateAnnouncementAction(id, formData)` を使用。
+-   **削除機能**: `deleteAnnouncementAction(id)` を呼び出すボタンをクライアントコンポーネントとして実装。
 </Aside>
 
 ## STEP 4: 動作確認と発展
 
--   作成したページやAPIが意図通りに動くか、ブラウザで実際に操作して確認しましょう。
--   入力バリデーション（タイトルが空でないかなど）や、より親切なエラー表示を追加してみましょう。
--   ローディング状態の表示を工夫してみましょう。
+-   作成したページやサーバーアクションが意図通りに動くか、ブラウザで実際に操作して確認しましょう。
+-   入力バリデーション（タイトルが空でないかなど）をサーバーアクション内に追加してみましょう。
+-   サーバーアクションからのレスポンス（成功・エラーメッセージ）をフォーム側で表示するようにしましょう。
+-   ローディング状態の表示 (`useFormStatus` など) を工夫してみましょう。
 
 ## まとめ
 
-このページでは、お知らせ機能という具体的な例を通して、フルスタック開発の基本的な流れを体験しました。
--   Prismaでデータベースのスキーマを定義し、マイグレーションを実行。
--   Next.jsのApp RouterでAPIルートを作成し、Prisma Clientでデータベースを操作。
--   Reactのサーバーコンポーネントとクライアントコンポーネントを使い分けてUIを構築。
+このページでは、お知らせ機能という具体的な例を通して、Next.jsのサーバーアクションとリポジトリパターンを活用したフルスタック開発の基本的な流れを体験しました。
+-   Prismaでデータベースのスキーマを定義。
+-   リポジトリ層でデータベース操作をカプセル化し、キャッシュ戦略を導入。
+-   サーバーアクション層でリポジトリを呼び出し、フロントエンドとの連携やキャッシュ管理を実行。
+-   Reactのサーバーコンポーネントとクライアントコンポーネントを使い分けてUIを構築し、サーバーアクションを呼び出す。
 
-最初は難しく感じるかもしれませんが、一つ一つのステップを丁寧にこなし、実際に手を動かすことで理解が深まります。
+このパターンを採用することで、より関心事が分離され、テストやメンテナンスがしやすいアプリケーションを構築できます。
 エラーが出ても焦らず、エラーメッセージを読んだり、[用語集](/getstart/term)や他のドキュメントを参照したり、チームメンバーに相談したりしながら解決していきましょう。
 
 次は、[デザイン開発の実践](/web-practice/design)に進んで、見た目を整えるスキルを磨きましょう！

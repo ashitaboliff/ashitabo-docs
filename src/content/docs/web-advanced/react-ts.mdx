@@ -21,64 +21,17 @@ import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
 
 コンポーネントのPropsの型は、`type`エイリアスまたは`interface`で定義できます。どちらを使っても機能的には大きな差はありませんが、一般的にReactのPropsには`type`が使われることが多い傾向にあります。プロジェクトのコーディング規約に従いましょう。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">typeエイリアスでのProps定義</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  import React from 'react';
+<CodePreviewTabs filePath="src/components/code_examples/tsx/TypedPropsExample.tsx" />
+{/* 上記は typeエイリアスでのProps定義例です。
+    interfaceでのProps定義例は、別途ファイルを作成するか、
+    このファイルに続けて通常のコードブロックで記述することを検討してください。
+    ここでは簡略化のため、typeエイリアスの例のみを CodePreviewTabs で表示します。
 
-  type GreetingProps = {
-    name: string;
-    messageCount?: number; // オプショナルなProps (あってもなくても良い)
-    children?: React.ReactNode; // 子要素を受け取る場合の型
-    onClickButton: (event: React.MouseEvent<HTMLButtonElement>) => void; // イベントハンドラの型
-  };
-
-  const Greeting: React.FC<GreetingProps> = ({ name, messageCount = 0, children, onClickButton }) => {
-    // React.FC<Props> は関数コンポーネントの型。childrenを暗黙的に含む。
-    // Propsを分割代入し、messageCountにデフォルト値を設定
-    return (
-      <div>
-        <h1>こんにちは、{name}さん！</h1>
-        {messageCount > 0 && <p>未読メッセージが{messageCount}件あります。</p>}
-        {children}
-        <button onClick={onClickButton}>通知</button>
-      </div>
-    );
-  };
-
-  export default Greeting;
-  ```
-  </Fragment>
-  <Fragment slot="tab-2-label">interfaceでのProps定義</Fragment>
-  <Fragment slot="tab-2-content">
-  ```tsx
-  import React, { ReactNode, MouseEvent } from 'react';
-
-  interface UserCardProps {
-    user: {
-      id: number;
-      name: string;
-      avatarUrl?: string;
-    };
-    className?: string;
-    onEdit: (userId: number) => void;
-  }
-
-  function UserCard({ user, className, onEdit }: UserCardProps) {
-    return (
-      <div className={`card ${className || ''}`}>
-        {user.avatarUrl && <img src={user.avatarUrl} alt={user.name} />}
-        <h2>{user.name} (ID: {user.id})</h2>
-        <button onClick={() => onEdit(user.id)}>編集</button>
-      </div>
-    );
-  }
-
-  export default UserCard;
-  ```
-  </Fragment>
-</CodePreviewTabs>
+    もし interface の例も CodePreviewTabs で表示したい場合は、
+    src/components/code_examples/tsx/InterfacePropsExample.tsx のようなファイルを作成し、
+    <CodePreviewTabs filePath="src/components/code_examples/tsx/InterfacePropsExample.tsx" />
+    と記述します。
+*/}
 
 **ポイント:**
 -   `React.ReactNode`: 子要素として受け取れるあらゆるもの（文字列、数値、JSX要素、配列など）を表す型。
@@ -130,58 +83,7 @@ export default UserProfile;
 
 複数の関連する状態や、複雑な状態更新ロジックを持つ場合は、`useReducer` フックが便利です。アクションの型とStateの型を定義することで、より堅牢な状態管理が実現できます。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">カウンター (useReducer版)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  'use client';
-  import { useReducer } from 'react';
-
-  // Stateの型
-  type CounterState = {
-    count: number;
-  };
-
-  // Actionの型 (ユニオン型で複数のアクションを表現)
-  type CounterAction =
-    | { type: 'increment'; payload?: number }
-    | { type: 'decrement'; payload?: number }
-    | { type: 'reset' };
-
-  // 初期状態
-  const initialState: CounterState = { count: 0 };
-
-  // Reducer関数: 現在のStateとActionを受け取り、新しいStateを返す
-  function reducer(state: CounterState, action: CounterAction): CounterState {
-    switch (action.type) {
-      case 'increment':
-        return { count: state.count + (action.payload || 1) };
-      case 'decrement':
-        return { count: state.count - (action.payload || 1) };
-      case 'reset':
-        return initialState;
-      default:
-        throw new Error('Unknown action type');
-    }
-  }
-
-  function CounterWithReducer() {
-    const [state, dispatch] = useReducer(reducer, initialState);
-
-    return (
-      <div>
-        <p>カウント: {state.count}</p>
-        <button onClick={() => dispatch({ type: 'increment' })}>+1</button>
-        <button onClick={() => dispatch({ type: 'increment', payload: 5 })}>+5</button>
-        <button onClick={() => dispatch({ type: 'decrement' })}>-1</button>
-        <button onClick={() => dispatch({ type: 'reset' })}>リセット</button>
-      </div>
-    );
-  }
-  export default CounterWithReducer;
-  ```
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/tsx/CounterWithReducer.tsx" />
 
 ## カスタムフック: ロジックの再利用
 
@@ -190,140 +92,60 @@ export default UserProfile;
 
 ### ウィンドウサイズを取得するカスタムフックの例
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">useWindowSize.ts</Fragment>
-  <Fragment slot="tab-1-content">
-  ```ts
-  'use client'; // windowオブジェクトを使うのでクライアントサイド限定
-  import { useState, useEffect } from 'react';
+<CodePreviewTabs filePath="src/components/code_examples/tsx/useWindowSize.ts" />
 
-  type WindowSize = {
-    width: number | undefined;
-    height: number | undefined;
-  };
+使い方の例 (`MyComponent.tsx`):
+```tsx
+// MyComponent.tsx
+'use client';
+import useWindowSize from './useWindowSize'; // 上記ファイルと同じディレクトリにあると仮定
 
-  function useWindowSize(): WindowSize {
-    const [windowSize, setWindowSize] = useState<WindowSize>({
-      width: undefined,
-      height: undefined,
-    });
+function MyComponent() {
+  const { width, height } = useWindowSize();
 
-    useEffect(() => {
-      function handleResize() {
-        setWindowSize({
-          width: window.innerWidth,
-          height: window.innerHeight,
-        });
-      }
-
-      window.addEventListener('resize', handleResize);
-      handleResize(); // 初期サイズを取得
-
-      return () => window.removeEventListener('resize', handleResize); // クリーンアップ
-    }, []); // 空の依存配列で初回マウント時のみ実行
-
-    return windowSize;
-  }
-
-  export default useWindowSize;
-  ```
-  </Fragment>
-  <Fragment slot="tab-2-label">使い方</Fragment>
-  <Fragment slot="tab-2-content">
-  ```tsx
-  // MyComponent.tsx
-  'use client';
-  import useWindowSize from './useWindowSize'; // パスは適宜調整
-
-  function MyComponent() {
-    const { width, height } = useWindowSize();
-
-    return (
-      <p>
-        ウィンドウ幅: {width}px, 高さ: {height}px
-      </p>
-    );
-  }
-  export default MyComponent;
-  ```
-  </Fragment>
-</CodePreviewTabs>
+  return (
+    <p>
+      ウィンドウ幅: {width !== undefined ? `${width}px` : '測定中...'}, 高さ: {height !== undefined ? `${height}px` : '測定中...'}
+    </p>
+  );
+}
+export default MyComponent;
+```
 
 ## Context API: Propsのバケツリレーを解消
 
 アプリケーション全体で共有したい状態（例: テーマ設定、ユーザー情報、言語設定など）がある場合、Propsを使って深い階層のコンポーネントまでデータを渡し続けるのは大変です（「Propsのバケツリレー」と呼ばれます）。
 Context APIを使うと、このような状態をコンポーネントツリーのどこからでも簡単に参照・更新できるようになります。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">ThemeContext.tsx</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  'use client';
-  import React, { createContext, useState, useContext, ReactNode } from 'react';
+<CodePreviewTabs filePath="src/components/code_examples/tsx/ThemeContextExample.tsx" />
 
-  type Theme = 'light' | 'dark';
-  type ThemeContextType = {
-    theme: Theme;
-    toggleTheme: () => void;
-  };
+使い方の例 (`AppLayout.tsx` や `src/app/layout.tsx` など):
+```tsx
+// src/app/layout.tsx など、アプリのルートに近い場所
+import { ThemeProvider, useTheme } from '../components/code_examples/tsx/ThemeContextExample'; // パスを調整
 
-  // Contextオブジェクトを作成 (デフォルト値を指定)
-  const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+function AppLayout({ children }: { children: React.ReactNode }) {
+  // ThemeProviderでラップされた内部のコンポーネントでuseThemeが使える
+  return (
+    <ThemeProvider>
+      <ThemedBody>{children}</ThemedBody>
+    </ThemeProvider>
+  );
+}
 
-  // Context Providerコンポーネント
-  export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [theme, setTheme] = useState<Theme>('light');
-    const toggleTheme = () => {
-      setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-    };
-
-    return (
-      <ThemeContext.Provider value={{ theme, toggleTheme }}>
-        {children}
-      </ThemeContext.Provider>
-    );
-  }
-
-  // Contextを使用するためのカスタムフック
-  export function useTheme() {
-    const context = useContext(ThemeContext);
-    if (context === undefined) {
-      throw new Error('useTheme must be used within a ThemeProvider');
-    }
-    return context;
-  }
-  ```
-  </Fragment>
-  <Fragment slot="tab-2-label">使い方 (AppやLayoutなど)</Fragment>
-  <Fragment slot="tab-2-content">
-  ```tsx
-  // src/app/layout.tsx など、アプリのルートに近い場所
-  import { ThemeProvider, useTheme } from './ThemeContext'; // パスは適宜調整
-
-  function AppLayout({ children }: { children: React.ReactNode }) {
-    // ThemeProviderでラップされた内部のコンポーネントでuseThemeが使える
-    return (
-      <ThemeProvider>
-        <ThemedBody>{children}</ThemedBody>
-      </ThemeProvider>
-    );
-  }
-
-  function ThemedBody({ children }: { children: React.ReactNode }) {
-    const { theme, toggleTheme } = useTheme(); // Contextから値を取得
-    return (
-      <body className={theme === 'dark' ? 'dark-theme' : 'light-theme'}>
-        <button onClick={toggleTheme}>
-          現在のテーマ: {theme} (切り替え)
-        </button>
-        {children}
-      </body>
-    );
-  }
-  export default AppLayout; // 実際にはNext.jsのLayoutとしてexport default
-  ```
-  </Fragment>
-</CodePreviewTabs>
+function ThemedBody({ children }: { children: React.ReactNode }) {
+  const { theme, toggleTheme } = useTheme(); // Contextから値を取得
+  return (
+    <body className={theme === 'dark' ? 'dark-theme' : 'light-theme'}>
+      <button onClick={toggleTheme}>
+        現在のテーマ: {theme} (切り替え)
+      </button>
+      {children}
+    </body>
+  );
+}
+export default AppLayout; // 実際にはNext.jsのLayoutとしてexport default
+```
 
 ## パフォーマンス最適化の基本 (`memo`, `useMemo`, `useCallback`)
 

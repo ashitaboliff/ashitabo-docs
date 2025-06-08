@@ -1,0 +1,34 @@
+<nav className="tw:bg-gray-800 tw:p-4">
+  <div className="tw:container tw:mx-auto tw:flex tw:items-center tw:justify-between">
+    <div className="tw:text-white tw:font-bold tw:text-xl">ロゴ</div>
+    {/* モバイル用ハンバーガーメニューボタン (JSでの制御が必要) */}
+    <div className="md:tw:hidden">
+      <button id="mobile-menu-button" className="tw:text-white focus:tw:outline-none">
+        <svg className="tw:w-6 tw:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+      </button>
+    </div>
+    {/* PC用ナビゲーションリンク */}
+    <div id="desktop-menu" className="tw:hidden md:tw:flex md:tw:space-x-4">
+      <a href="#" className="tw:text-gray-300 tw:hover:bg-gray-700 tw:hover:text-white tw:px-3 tw:py-2 tw:rounded-md">ホーム</a>
+      <a href="#" className="tw:text-gray-300 tw:hover:bg-gray-700 tw:hover:text-white tw:px-3 tw:py-2 tw:rounded-md">サービス</a>
+      <a href="#" className="tw:text-gray-300 tw:hover:bg-gray-700 tw:hover:text-white tw:px-3 tw:py-2 tw:rounded-md">会社概要</a>
+    </div>
+  </div>
+  {/* モバイル用メニュー (JSで表示/非表示を切り替え) */}
+  <div id="mobile-menu" className="tw:hidden md:tw:hidden tw:mt-2">
+    <a href="#" className="tw:block tw:text-gray-300 tw:tw:hover:bg-gray-700 tw:hover:text-white tw:px-3 tw:py-2 tw:rounded-md">ホーム</a>
+    <a href="#" className="tw:block tw:text-gray-300 tw:hover:bg-gray-700 tw:hover:text-white tw:px-3 tw:py-2 tw:rounded-md">サービス</a>
+    <a href="#" className="tw:block tw:text-gray-300 tw:hover:bg-gray-700 tw:hover:text-white tw:px-3 tw:py-2 tw:rounded-md">会社概要</a>
+  </div>
+</nav>
+
+<script>
+  // 簡単なメニュー開閉のJavaScript例
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (mobileMenuButton && mobileMenu) { // 要素が存在するか確認
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('tw:hidden'); // hiddenクラスもプレフィックスが必要
+    });
+  }
+</script>

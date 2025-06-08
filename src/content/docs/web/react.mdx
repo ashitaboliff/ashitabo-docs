@@ -96,42 +96,7 @@ Reactでは、`useState` という特別な関数（フックと呼びます）�
 
 ボタンをクリックすると数字が増える簡単なカウンターを作ってみましょう。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">Counter.tsx</Fragment>
-  <Fragment slot="tab-1-content">
-    ```tsx
-    'use client'; // useStateを使うのでクライアントコンポーネント
-
-    import React, { useState } from 'react';
-
-    function Counter() {
-      // 'count' という名前のState変数を宣言。初期値は0。
-      // 'setCount' は 'count' を更新するための関数。
-      const [count, setCount] = useState(0);
-
-      function handleClick() {
-        setCount(count + 1); // countの値を1増やす
-      }
-
-      return (
-        <div>
-          <p>現在のカウント: {count}</p>
-          <button onClick={handleClick}>カウントアップ</button>
-        </div>
-      );
-    }
-    export default Counter;
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">プレビューのイメージ</Fragment>
-  <Fragment slot="tab-2-content">
-    <div>
-      <p>現在のカウント: 0</p>
-      <button>カウントアップ</button>
-      {/* ボタンを押すと「現在のカウント: 1」のように表示が変わる */}
-    </div>
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/react/Counter.tsx" />
 
 **`useState` の使い方:**
 1.  `import { useState } from 'react';` で `useState` フックをインポートします。

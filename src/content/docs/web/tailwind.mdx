@@ -30,23 +30,12 @@ Tailwind CSS（テイルウィンド シーエスエス）は、**ユーティ�
 
 Tailwind CSSでは、`bg-blue-500`（背景を青色500番に）、`text-lg`（文字を大きく）、`p-4`（上下左右に4単位のパディング）、`rounded-md`（中程度の角丸）といったクラスを組み合わせてスタイルを適用します。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">HTMLの例</Fragment>
-  <Fragment slot="tab-1-content">
-    ```html
-    <button class="bg-sky-500 hover:bg-sky-700 text-white font-bold py-2 px-4 rounded-lg shadow-md">
-      素敵なボタン
-    </button>
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">プレビューのイメージ</Fragment>
-  <Fragment slot="tab-2-content">
-    <button style={{backgroundColor: 'rgb(14, 165, 233)', color: 'white', fontWeight: 'bold', paddingTop: '0.5rem', paddingBottom: '0.5rem', paddingLeft: '1rem', paddingRight: '1rem', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)'}}>
-      素敵なボタン
-    </button>
-    {/* 上記styleはあくまでTailwindクラスが適用された結果のイメージです */}
-  </Fragment>
-</CodePreviewTabs>
+<Aside type="note">
+このドキュメントサイトでは、Starlightのスタイルとの競合を避けるため、Tailwind CSSのクラス名に `tw:` というプレフィックスを付けています（例: `tw:bg-sky-500`）。
+そのため、以下のコード例のプレビューで実際にスタイルを適用するには、HTML内のクラス名に `tw:` を付ける必要があります。
+実際の「あしたぼホームページ」のコードでは、この `tw:` プレフィックスは不要です。
+</Aside>
+<CodePreviewTabs filePath="src/components/code_examples/html/TailwindButtonExample.html" />
 
 ### レスポンシブデザイン
 
@@ -97,8 +86,9 @@ Tailwind CSSでは、`bg-blue-500`（背景を青色500番に）、`text-lg`（�
       gkktt: ['var(--851-Gkktt)', 'sans-serif'],
     }
     ```
-    HTMLで使う例: `<h1 class="font-nicoMoji">タイトル</h1>`
+    HTMLで使う例: `<h1 class="tw:font-nicoMoji">タイトル</h1>`（このドキュメントサイトのプレビューでは `tw:` が必要）
 -   **カスタム最大幅**: `theme.maxWidth` で、`1/4`, `1/2-screen` のような独自の最大幅クラスが使えるように設定されています。
+-   **プラグインの導入**: Tailwind CSS v4以降では、daisyUIのようなプラグインは、主にメインのCSSファイル（このプロジェクトでは `src/assets/app.css`）で `@plugin` ディレクティブを使って読み込みます。
 
 ## daisyUI: Tailwind CSSをもっと便利に！
 
@@ -108,59 +98,42 @@ daisyUI（デイジーユーアイ）は、Tailwind CSSのための人気プラ�
 ### daisyUIの基本的な使い方
 
 daisyUIを導入すると、`btn` や `card` といったクラス名で、整ったデザインのコンポーネントが利用できます。
+（このドキュメントサイトのプレビューでは、これらのクラスにも `tw:` プレフィックスが必要です。例: `tw:btn`）
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">daisyUIのボタン例</Fragment>
-  <Fragment slot="tab-1-content">
-    ```html
-    <button class="btn">標準ボタン</button>
-    <button class="btn btn-primary">プライマリーボタン</button>
-    <button class="btn btn-secondary btn-outline">枠線ボタン</button>
-    <button class="btn btn-accent btn-sm">小さいアクセントボタン</button>
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">プレビューのイメージ</Fragment>
-  <Fragment slot="tab-2-content">
-    {/* 実際のdaisyUIの見た目を再現するのは難しいため、説明文で補足 */}
-    <p>上記のようなクラスを指定すると、テーマに沿ったデザインのボタンが表示されます。</p>
-    <button>標準ボタン (イメージ)</button>
-    <button style={{backgroundColor: '#570df8', color: 'white'}}>プライマリーボタン (イメージ)</button>
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/html/DaisyUIButtonsExample.html" />
 
-### daisyUIの設定 (`tailwind.config.ts`)
+### daisyUIの導入と設定 (Tailwind CSS v4 + daisyUI v5)
 
-daisyUIを使うには、通常 `tailwind.config.ts` にプラグインとして追加します。
-「あしたぼホームページ」の `tailwind.config.ts` には現時点ではdaisyUIのプラグイン設定が見当たりませんが、もし使う場合は以下のように追記します。
+Tailwind CSS v4 と daisyUI v5 を使う場合、導入方法は主にCSSファイルで行います。
+「あしたぼホームページ」では、メインのCSSファイル（このドキュメントプロジェクトでは `src/assets/app.css` に相当）に以下のように記述してdaisyUIを読み込みます。
 
-```ts
-// tailwind.config.ts
-import type { Config } from 'tailwindcss';
+```css
+/* src/assets/app.css (またはプロジェクトのメインCSSファイル) */
+@import "tailwindcss" prefix(tw); /* Tailwind CSS本体を読み込み (tw- プレフィックスはこのドキュメント用) */
+@plugin "daisyui"; /* daisyUIプラグインを読み込み */
 
-const config: Config = {
-  content: ['./src/**/**/*.{js,ts,jsx,tsx,mdx}'],
-  theme: {
-    // ... 省略 ...
-  },
-  plugins: [
-    require('daisyui'), // この行を追加
-  ],
-  // daisyUIのテーマ設定など (任意)
-  daisyui: {
-    themes: ["light", "dark", "cupcake", "bumblebee", "emerald", "corporate", "synthwave", "retro", "cyberpunk", "valentine", "halloween", "garden", "forest", "aqua", "lofi", "pastel", "fantasy", "wireframe", "black", "luxury", "dracula", "cmyk", "autumn", "business", "acid", "lemonade", "night", "coffee", "winter"], // 利用可能なテーマ
-    // styled: true, // コンポーネントクラスにスタイルを適用するか
-    // base: true, // 基本スタイルを適用するか
-    // utils: true, // ユーティリティクラスを生成するか
-    // logs: true, // ログを出力するか
-  },
-};
-export default config;
+/* daisyUIのテーマ設定などもCSS内で行うことができます */
+@plugin "daisyui/theme" {
+  name: "ashitabo-light"; /* カスタムテーマ名 */
+  default: true;         /* デフォルトテーマとして設定 */
+  color-scheme: light;
+  /* ... 具体的な色の設定 (例: --color-primary: oklch(60% 0.2 260); ) ... */
+}
+@plugin "daisyui/theme" {
+  name: "ashitabo-dark";
+  prefersdark: true;     /* ダークモード時のデフォルトとして設定 */
+  color-scheme: dark;
+  /* ... 具体的な色の設定 ... */
+}
 ```
-`daisyui.themes` で使用するテーマを指定できます。あしたぼホームページで特定のテーマが使われている場合は、それに合わせましょう。
+このように、`tailwind.config.ts` の `plugins` 配列に `require('daisyui')` を記述する代わりに、CSSファイル内で `@plugin "daisyui";` と記述します。
+テーマのカスタマイズも、`@plugin "daisyui/theme"` を使ってCSS内で行うことが推奨されています。
+詳細なテーマ設定方法は、[daisyUIの公式ドキュメント](https://daisyui.com/docs/themes/)を参照してください。
 
 <Aside type="tip">
 daisyUIのコンポーネントも、Tailwind CSSのユーティリティクラスと組み合わせて細かくカスタマイズできます。
-例: `<button class="btn btn-primary text-lg p-4">大きなプライマリーボタン</button>`
+例: `<button class="tw:btn tw:btn-primary tw:text-lg tw:p-4">大きなプライマリーボタン</button>`
+（このドキュメントサイトのプレビューでは `tw:` が必要）
 </Aside>
 
 ## まとめ

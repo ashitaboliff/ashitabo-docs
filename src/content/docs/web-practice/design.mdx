@@ -42,59 +42,42 @@ Webサイトの「見た目」や「使いやすさ」は、ユーザーがそ�
 3.  **Tailwind CSSとdaisyUIで実装**
     `app/announcements/page.tsx` の `map` でお知らせをリスト表示している部分を修正します。
 
-    <CodePreviewTabs>
-      <Fragment slot="tab-1-label">改善前のイメージ (一部抜粋)</Fragment>
-      <Fragment slot="tab-1-content">
-      ```tsx
-      // ...
-      <ul>
-        {announcements.map((announcement: any) => (
-          <li key={announcement.id} className="mb-2 border p-2 rounded">
-            <Link href={`/announcements/${announcement.id}`}>
-              <h2 className="text-xl font-bold">{announcement.title}</h2>
-            </Link>
-            <p className="text-sm text-gray-500">
+    <CodePreviewTabs filePath="src/components/code_examples/html/BeforeImprovementDesign.html" />
+    {/* 
+      上記の BeforeImprovementDesign.html は、改善前のHTML構造の「イメージ」です。
+      実際の改善対象は app/announcements/page.tsx の map 処理部分になります。
+      改善後のコード例は以下に通常のコードブロックで示します。
+    */}
+    改善後のイメージ (`app/announcements/page.tsx` の `map` 部分の変更例、daisyUIのCard使用):
+    ```tsx
+    // app/announcements/page.tsx (map部分の変更例)
+    // ...
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {announcements.map((announcement: any) => ( // announcementの型は適切に定義してください
+        <div key={announcement.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+          <div className="card-body">
+            <h2 className="card-title">
+              <Link href={`/announcements/${announcement.id}`} className="link link-hover">
+                {announcement.title}
+              </Link>
+            </h2>
+            <p className="text-xs text-gray-500 mb-2">
               {new Date(announcement.createdAt).toLocaleDateString()}
             </p>
-          </li>
-        ))}
-      </ul>
-      // ...
-      ```
-      </Fragment>
-      <Fragment slot="tab-2-label">改善後のイメージ (daisyUIのCard使用)</Fragment>
-      <Fragment slot="tab-2-content">
-      ```tsx
-      // app/announcements/page.tsx (map部分の変更例)
-      // ...
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {announcements.map((announcement: any) => (
-          <div key={announcement.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-            <div className="card-body">
-              <h2 className="card-title">
-                <Link href={`/announcements/${announcement.id}`} className="link link-hover">
-                  {announcement.title}
-                </Link>
-              </h2>
-              <p className="text-xs text-gray-500 mb-2">
-                {new Date(announcement.createdAt).toLocaleDateString()}
-              </p>
-              <p className="text-sm line-clamp-3"> {/* 内容を3行で省略表示 */}
-                {announcement.content}
-              </p>
-              <div className="card-actions justify-end mt-2">
-                <Link href={`/announcements/${announcement.id}`} className="btn btn-sm btn-outline btn-primary">
-                  続きを読む
-                </Link>
-              </div>
+            <p className="text-sm line-clamp-3"> {/* 内容を3行で省略表示 */}
+              {announcement.content}
+            </p>
+            <div className="card-actions justify-end mt-2">
+              <Link href={`/announcements/${announcement.id}`} className="btn btn-sm btn-outline btn-primary">
+                続きを読む
+              </Link>
             </div>
           </div>
-        ))}
-      </div>
-      // ...
-      ```
-      </Fragment>
-    </CodePreviewTabs>
+        </div>
+      ))}
+    </div>
+    // ...
+    ```
     **ポイント:**
     -   `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4`: レスポンシブなグリッドレイアウト。
     -   `card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow`: daisyUIのカードコンポーネントとTailwindのユーティリティクラスで見た目を調整。

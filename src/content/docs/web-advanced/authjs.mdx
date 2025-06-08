@@ -1,6 +1,6 @@
 ---
-title: Auth.js (NextAuth.js) の基礎
-description: Next.jsアプリケーションに認証機能（ログイン、セッション管理など）を簡単に導入できるAuth.js (NextAuth.js) の使い方を学びます。
+title: Auth.js (NextAuth.js) の実践的な認証フロー
+description: Next.jsアプリケーションに認証機能を導入するためのAuth.js (NextAuth.js) の詳細な設定、セッション管理、ミドルウェア連携について解説します。
 ---
 
 import { Aside, Steps } from '@astrojs/starlight/components';
@@ -12,269 +12,114 @@ import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
 Auth.js（旧 NextAuth.js）は、Next.jsアプリケーションにこのような認証機能を驚くほど簡単に追加できる、非常に人気のあるライブラリです。
 
 「あしたぼホームページ」でも、ユーザー登録やログイン機能を実現するためにAuth.jsが活用されています。
-このページでは、Auth.jsの基本的なセットアップから、主要な認証プロバイダ（例: Google）との連携、セッション管理、そしてPrismaアダプターを使ったデータベースとの連携までを解説します。
+このページでは、Auth.jsの基本的なセットアップから、より実践的な設定、セッション管理のカスタマイズ、そしてミドルウェアを使った高度なアクセスコントロールまでを、具体的なコード例を交えながら詳細に解説します。
 
 {/* ここに「Auth.jsを使った認証フローの概要図（ユーザー → ログインページ → プロバイダ認証 → アプリケーション）」を挿入 */}
 
-### Auth.jsの主な特徴
+### Auth.jsの主な特徴 (再掲)
 
--   **多様な認証プロバイダ**: Google, GitHub, Twitter, FacebookなどのOAuthプロバイダに加え、メール/パスワード認証、マジックリンク認証など、様々な認証方法をサポート。
--   **簡単なセットアップ**: Next.jsのAPIルートを使って数行の設定で基本的な認証フローを構築可能。
--   **セッション管理**: CookieベースまたはJWTベースのセッション管理を自動で行い、セキュリティも考慮されています（CSRF保護など）。
--   **データベースアダプタ**: Prisma, TypeORM, Supabaseなど、様々なデータベースアダプタが用意されており、ユーザー情報やセッション情報を永続化できます。
--   **カスタマイズ性**: コールバック関数を使って認証フローの各ステップで独自の処理を挟み込めます。
+-   **多様な認証プロバイダ**: Google, GitHub, Lineなど多数のOAuthプロバイダ、メール/パスワード認証などをサポート。
+-   **簡単なセットアップ**: Next.jsのAPIルートやミドルウェアと連携し、少ない設定で認証フローを構築。
+-   **セッション管理**: CookieベースまたはJWTベースのセッション管理。CSRF保護などのセキュリティ機能も内包。
+-   **データベースアダプタ**: Prismaなどと連携し、ユーザー情報やセッションを永続化。
+-   **カスタマイズ性**: コールバック関数により認証フローの各ステップを細かく制御可能。
 
-## 基本的なセットアップ (App Router + Prisma Adapter)
+## Auth.jsのコア設定ファイル群
 
-ここでは、Next.jsのApp Router環境で、Google認証プロバイダとPrismaアダプターを使ってAuth.jsをセットアップする手順を説明します。
+「あしたぼホームページ」におけるAuth.jsの認証設定は、主に以下のファイル群で構成されています。
 
-<Steps>
-1.  **必要なパッケージのインストール**
-    ```bash
-    npm install next-auth @auth/prisma-adapter
-    # Prismaもまだなら npm install prisma @prisma/client
-    ```
+1.  **`auth.config.ts`**: プロバイダ設定など、Edge環境でも互換性のある基本的な設定を記述します。
+2.  **`authOptions.ts` (または `auth.ts`)**: Prismaアダプタの設定、セッション戦略、コールバック関数など、より詳細な認証オプションを定義します。ここで `auth.config.ts` の設定も取り込みます。
+3.  **`middleware.ts`**: リクエストに基づいて認証状態をチェックし、アクセス制御やリダイレクトを行います。
 
-2.  **Prismaスキーマの更新 (`prisma/schema.prisma`)**
-    Auth.jsがユーザー、アカウント、セッションなどの情報を保存するために必要なモデルをスキーマに追加します。
-    [Auth.jsのPrismaアダプタードキュメント](https://authjs.dev/reference/adapter/prisma#schema-1) に記載されているモデル定義をコピーして、`schema.prisma` に追記します。
-    主なモデルは `User`, `Account`, `Session`, `VerificationToken`, `Authenticator` です。
-    ```prisma
-    // prisma/schema.prisma (Auth.js関連モデルの抜粋)
-    model Account {
-      id                String  @id @default(cuid())
-      userId            String
-      type              String
-      provider          String
-      providerAccountId String
-      refresh_token     String? @db.Text
-      access_token      String? @db.Text
-      expires_at        Int?
-      token_type        String?
-      scope             String?
-      id_token          String? @db.Text
-      session_state     String?
+### 1. 基本設定 (`auth.config.ts` のイメージ)
 
-      user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ここでは、認証プロバイダ（例: Line）などの基本的な設定を行います。このファイルはEdgeランタイムでも動作するように、データベースアクセスなどを含まない設定に限定されることが多いです。
 
-      @@unique([provider, providerAccountId])
-    }
+<CodePreviewTabs filePath="src/components/code_examples/auth/authConfigExample.ts" />
+<Aside type="note">
+実際のプロジェクトでは、`next-auth` やプロバイダ (`next-auth/providers/line`) を正しくインポートしてください。上記はドキュメント表示用のダミー実装です。
+</Aside>
 
-    model Session {
-      id           String   @id @default(cuid())
-      sessionToken String   @unique
-      userId       String
-      expires      DateTime
-      user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    }
+### 2. 詳細な認証オプション (`authOptions.ts` のイメージ)
 
-    model User {
-      id            String    @id @default(cuid())
-      name          String?
-      email         String?   @unique
-      emailVerified DateTime?
-      image         String?
-      accounts      Account[]
-      sessions      Session[]
-      // ... あなたのアプリケーション固有のUserフィールド (例: role, bookingsなど)
-    }
+このファイルで、データベースアダプタ（Prisma）、セッション戦略（JWT）、そして認証フローの挙動をカスタマイズするコールバック関数などを設定します。
 
-    model VerificationToken {
-      identifier String
-      token      String   @unique
-      expires    DateTime
+<CodePreviewTabs filePath="src/components/code_examples/auth/authOptionsExample.ts" />
 
-      @@unique([identifier, token])
-    }
-    // Authenticatorモデルも必要に応じて追加
-    ```
-    <Aside type="caution">
-    既存の `User` モデルがある場合は、Auth.jsが必要とするフィールド（`id`, `name`, `email`, `emailVerified`, `image`, `accounts`, `sessions`）と型を合わせるか、マージする必要があります。`id` は `String` 型で `@default(cuid())` または `@default(uuid())` が推奨されます。
-    </Aside>
-    スキーマを更新したら、マイグレーションを実行します。
-    ```bash
-    npx prisma migrate dev --name add-auth-models
-    npx prisma generate
-    ```
+**主な設定項目とコールバック解説:**
 
-3.  **APIルートの作成 (`app/api/auth/[...nextauth]/route.ts`)**
-    このファイルがAuth.jsのすべての認証リクエスト（サインイン、サインアウト、コールバックなど）を処理するエンドポイントになります。
-    ```typescript
-    // app/api/auth/[...nextauth]/route.ts
-    import NextAuth from 'next-auth';
-    import GoogleProvider from 'next-auth/providers/google';
-    import { PrismaAdapter } from '@auth/prisma-adapter';
-    import prisma from '@/lib/prisma'; // Prisma Clientのインスタンス
+-   **`adapter: PrismaAdapter(prisma)`**: Prismaをデータベースアダプタとして使用し、ユーザーやセッション情報をデータベースに保存・管理します。
+-   **`session: { strategy: 'jwt', maxAge: ... }`**: セッション管理戦略としてJWT (JSON Web Token) を使用します。`maxAge` でセッションの有効期限を設定できます。
+-   **`pages: { ... }`**: カスタムのサインインページ、サインアウト後のリダイレクト先、エラーページなどを指定できます。
+-   **`callbacks`**:
+    -   **`jwt({ token, user, trigger, session })`**: JWTが作成・更新される際に呼び出されます。
+        -   初回サインイン時 (`user` オブジェクトが存在する場合): `user.id` をトークンの `sub` (subject) に設定し、データベースからユーザー情報 (`dbUser`) やプロフィール情報 (`dbProfile`) を取得してトークンに含めます。
+        -   セッション更新時 (`trigger === 'update'`): `useSession().update()` がクライアントから呼ばれた際などに発火します。データベースから最新のユーザー情報やプロフィール情報を再取得し、トークンを更新します。
+        -   既存トークンの検証時: プロフィール情報が欠落している場合などに、再取得してトークンを補完することがあります。
+        -   トークンにエラー情報 (`token.error`) を持たせることで、セッションの有効性判断に利用できます。
+    -   **`session({ session, token })`**: セッションがアクセスされるたび（例: `useSession`, `getServerSession` 呼び出し時）に呼び出され、クライアントに返されるセッションオブジェクトを構築します。
+        -   `jwt` コールバックでトークンに格納した情報（`token.sub`, `token.dbUser`, `token.dbProfile`, `token.error` など）を元に、クライアント側で使いやすいようにセッションオブジェクト (`session.user`, `session.error`) を整形します。
+        -   ユーザーのID、名前、メール、ロール、プロフィール情報（`is_profile`, `full_name`, `part`など）をセッションに追加しています。
+-   **`cookies`**: セッションやCSRFトークンなどで使用されるCookieの詳細設定（`httpOnly`, `sameSite`, `secure`など）を行えます。
 
-    export const authOptions = {
-      adapter: PrismaAdapter(prisma),
-      providers: [
-        GoogleProvider({
-          clientId: process.env.GOOGLE_CLIENT_ID as string,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-        }),
-        // 他のプロバイダもここに追加可能 (例: GitHubProvider, CredentialsProvider)
-      ],
-      // pages: { // カスタムログインページなどを使う場合
-      //   signIn: '/auth/signin',
-      // },
-      // callbacks: { // コールバック関数で挙動をカスタマイズ
-      //   async session({ session, user }) {
-      //     // セッションオブジェクトにユーザーIDを追加するなど
-      //     if (session.user) {
-      //       session.user.id = user.id;
-      //     }
-      //     return session;
-      //   },
-      // },
-      // secret: process.env.NEXTAUTH_SECRET, // 本番環境では必須
-      // session: { strategy: "jwt" }, // JWTセッションを使う場合 (アダプタ使用時は通常DBセッション)
-    };
+<Aside type="tip">
+`jwt` コールバックでデータベースアクセスを行う際は、パフォーマンスへの影響を考慮し、必要な情報のみを取得・格納するようにしましょう。
+セッションオブジェクトに含める情報は、クライアントサイドで必要最小限のものに留めるのがセキュリティ上も望ましいです。
+</Aside>
 
-    const handler = NextAuth(authOptions);
+### 3. ミドルウェアによるアクセス制御 (`middleware.ts` のイメージ)
 
-    export { handler as GET, handler as POST };
-    ```
+ミドルウェアは、特定のパスへのリクエストに対して、認証状態やユーザープロファイルの状況に基づいたアクセス制御やリダイレクト処理を行います。
 
-4.  **環境変数の設定 (`.env`)**
-    Googleプロバイダを使う場合、Google Cloud ConsoleでOAuthクライアントIDとシークレットを取得し、`.env` ファイルに設定します。
-    ```env
-    # .env
-    GOOGLE_CLIENT_ID="YOUR_GOOGLE_CLIENT_ID"
-    GOOGLE_CLIENT_SECRET="YOUR_GOOGLE_CLIENT_SECRET"
-    NEXTAUTH_URL="http://localhost:3000" # 開発環境のURL (本番では実際のURL)
-    NEXTAUTH_SECRET="YOUR_VERY_SECURE_RANDOM_STRING" # openssl rand -base64 32 などで生成
-    DATABASE_URL="..." # Prisma用
-    ```
-    `NEXTAUTH_SECRET` はセッションの暗号化などに使われる重要な値です。
+<CodePreviewTabs filePath="src/components/code_examples/auth/middlewareExample.ts" />
 
-5.  **SessionProviderのセットアップ**
-    クライアントコンポーネントで `useSession` フックを使えるようにするために、アプリケーションのルートレイアウト (`app/layout.tsx` など) を `SessionProvider` でラップします。
+**ミドルウェアの主な処理の流れ:**
+-   **`config.matcher`**: ミドルウェアがどのパスに対して実行されるかを定義します。正規表現を使い、静的ファイルやAPIルートなどを除外しています。
+-   **ルート定義**: `PROFILE_REQUIRED_ROUTES`, `SESSION_REQUIRED_ROUTES`, `PUBLIC_ROUTES`, `AUTH_FLOW_ROUTES` といった配列で、各ルートのアクセス要件を定義しています。正規表現も利用可能です。
+-   **`MiddlewareApp` クラス**: リクエスト処理のロジックをクラスにまとめています。
+    -   **メンテナンスモード処理**: 環境変数 `MAINTENANCE_MODE` が `true` の場合、ホワイトリストIP以外のアクセスを `/maintenance` ページにリダイレクトします。
+    -   **基本的なリダイレクト**: `/` から `/home` へ、`/auth` から `/auth/padlock` へリダイレクトします。
+    -   **`getSessionState()`**: リクエストに付与されたセッション情報 (`request.auth`) を元に、現在のセッション状態を `'no-session'`, `'invalid-session'`, `'session'` (セッションはあるがプロフィール未設定), `'profile'` (プロフィール設定済み) のいずれかで返します。
+    -   **各ルートパターンの処理**:
+        -   認証フローのルート (`AUTH_FLOW_ROUTES`): ログイン済みなら `/user` や `/auth/signin/setting` へリダイレクト。
+        -   プロフィール設定ページ (`/auth/signin/setting`): 未ログインならサインインページへ、設定済みならユーザーページへリダイレクト。
+        -   プロフィール必須ルート (`PROFILE_REQUIRED_ROUTES`): セッション状態に応じて、サインインページ、セッション切れページ、プロフィール設定ページへリダイレクト。プロフィール設定済みならアクセス許可。
+        -   セッション必須ルート (`SESSION_REQUIRED_ROUTES`): 未ログインならサインインページ、無効セッションならセッション切れページへリダイレクト。
+        -   公開ルート (`PUBLIC_ROUTES`): アクセス許可。
+    -   **デフォルト処理**: 上記いずれにもマッチしないパスは、ここではプロフィール必須ルートと同様の扱いとしています（プロジェクトの要件に応じて変更）。
+-   **`export default auth(...)`**: NextAuth.jsの `auth` 関数でミドルウェア関数をラップすることで、リクエストオブジェクトにセッション情報 (`request.auth`) が自動的に注入されるようになります。
+
+<Aside type="caution">
+ミドルウェアはすべての対象リクエストで実行されるため、処理が重くなるとサイト全体のパフォーマンスに影響します。データベースアクセスなど時間のかかる処理は最小限に留め、効率的なロジックを心がけましょう。
+</Aside>
+
+## セッションの更新と管理
+
+-   **セッションの自動延長**: Auth.jsは、ユーザーがアクティブである限り、セッションの有効期限を自動的に延長する仕組みを持っています（設定による）。
+-   **手動でのセッション更新**: クライアントコンポーネントでユーザー情報（例: プロフィール）が更新された後、現在のセッション情報にもその変更を即座に反映させたい場合があります。その際は、`useSession()` フックから得られる `update` 関数を呼び出すことで、`jwt` コールバックの `trigger === 'update'` のロジックを発火させ、セッション（実質的にはJWTトークン）を最新の情報で更新できます。
     ```tsx
-    // app/layout.tsx
-    import { SessionProvider } from 'next-auth/react';
-    // ... 他のimport ...
+    // クライアントコンポーネント内
+    import { useSession } from 'next-auth/react';
 
-    export default function RootLayout({
-      children,
-    }: {
-      children: React.ReactNode;
-    }) {
-      return (
-        <html lang="ja">
-          <body>
-            <SessionProvider> {/* ここでラップ */}
-              {/* ...ヘッダーや他のレイアウトコンポーネント... */}
-              {children}
-            </SessionProvider>
-          </body>
-        </html>
-      );
+    function MyProfilePage() {
+      const { data: session, update } = useSession();
+
+      const handleProfileUpdateSuccess = async () => {
+        // プロフィール更新API呼び出し成功後...
+        await update(); // これでセッションが再取得・更新される
+      };
+      // ...
     }
     ```
-    <Aside type="note">
-    `SessionProvider` はクライアントコンポーネントなので、もし `RootLayout` がサーバーコンポーネントの場合、`SessionProvider` を別のクライアントコンポーネントに切り出してラップする必要があります。
-    </Aside>
-
-</Steps>
-
-## 認証状態の利用とサインイン/サインアウト
-
-### クライアントコンポーネントでの利用 (`useSession`)
-
-`useSession` フックを使うと、クライアントコンポーネント内で現在の認証セッション情報（ユーザー名、メール、ログイン状態など）を取得できます。
-
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">AuthButton.tsx (例)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  // src/components/AuthButton.tsx
-  'use client';
-  import { useSession, signIn, signOut } from 'next-auth/react';
-  import Image from 'next/image';
-
-  export default function AuthButton() {
-    const { data: session, status } = useSession();
-
-    if (status === 'loading') {
-      return <p>読み込み中...</p>;
-    }
-
-    if (session) {
-      return (
-        <div className="flex items-center space-x-2">
-          {session.user?.image && (
-            <Image src={session.user.image} alt={session.user.name || 'User avatar'} width={32} height={32} className="rounded-full" />
-          )}
-          <span>こんにちは、{session.user?.name || session.user?.email} さん</span>
-          <button onClick={() => signOut()} className="btn btn-sm btn-outline">
-            サインアウト
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <button onClick={() => signIn('google')} className="btn btn-sm btn-primary">
-        Googleでサインイン
-      </button>
-      // <button onClick={() => signIn()}>一般的なサインイン</button> // 複数のプロバイダがある場合
-    );
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
-
-### サーバーコンポーネントでの利用 (`getServerSession`)
-
-サーバーコンポーネントやAPIルート、ミドルウェア内では、`getServerSession` 関数を使ってセッション情報を取得できます。
-`authOptions` (先ほど `route.ts` で定義したもの) を渡す必要があります。
-
-```ts
-// app/dashboard/page.tsx (サーバーコンポーネントの例)
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // パスを調整
-import { redirect } from 'next/navigation';
-
-export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect('/api/auth/signin?callbackUrl=/dashboard'); // ログインしていなければサインインページへ
-  }
-
-  return (
-    <div>
-      <h1>ようこそ、{session.user?.name}さんのダッシュボードへ</h1>
-      {/* ダッシュボードのコンテンツ */}
-    </div>
-  );
-}
-```
-
-## 保護されたルート (ミドルウェア)
-
-特定のページ（例: `/dashboard`, `/admin`）へのアクセスを認証済みユーザーのみに制限したい場合、ミドルウェア (`middleware.ts`) を使うのが便利です。
-
-```ts
-// middleware.ts (プロジェクトルートまたはsrc直下)
-export { default } from "next-auth/middleware";
-
-export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"], // 保護したいパスを指定
-};
-```
-これにより、`matcher` で指定されたパスにアクセスしようとすると、自動的に認証状態がチェックされ、未認証の場合はサインインページにリダイレクトされます。
-`NEXTAUTH_SECRET` 環境変数が設定されている必要があります。
+-   **セッションデータの構造**: `authOptions.ts` の `session` コールバックで定義した通り、`session.user` オブジェクトには、基本的なユーザー情報に加え、`dbUser` (PrismaのUserモデルのデータ)、`dbProfile` (カスタムプロフィール情報)、`is_profile` (プロフィール設定済みか否か) など、アプリケーションで必要となる情報が格納されます。
 
 ## まとめ
 
--   Auth.js (NextAuth.js) は、Next.jsアプリに認証機能を簡単かつ柔軟に追加できる強力なライブラリです。
--   `app/api/auth/[...nextauth]/route.ts` に認証設定を記述し、プロバイダ（Googleなど）やアダプタ（Prismaなど）を設定します。
--   Prismaアダプターを使うと、ユーザー情報をデータベースに永続化できます。対応するモデルをスキーマに追加しマイグレーションが必要です。
--   `SessionProvider` でアプリをラップし、`useSession` (クライアント) や `getServerSession` (サーバー) で認証状態を取得します。
--   `signIn()` と `signOut()` で簡単にログイン・ログアウト処理を実装できます。
--   ミドルウェアを使って特定のルートを保護できます。
+Auth.jsを使いこなすことで、Next.jsアプリケーションに堅牢かつ柔軟な認証システムを構築できます。
+-   `auth.config.ts` と `authOptions.ts` で認証プロバイダ、データベースアダプタ、セッション戦略、コールバックを詳細に設定します。
+-   `jwt` と `session` コールバックをカスタマイズすることで、セッションに含める情報を自由に制御し、データベースと同期させることができます。
+-   `middleware.ts` を活用することで、ページのアクセス制御をきめ細かく行い、ユーザーの状態に応じた適切なリダイレクト処理を実現できます。
+-   セッションの手動更新や、サーバー/クライアントコンポーネントでのセッション情報の取得方法を理解することで、よりインタラクティブなアプリケーションが作成可能です。
 
-Auth.jsには、ここで紹介した以外にも多くの機能（カスタムページ、メール/パスワード認証、ロールベースアクセス制御など）があります。
-「あしたぼホームページ」の認証周りの実装を見る際や、さらに高度な認証機能を実装する際には、[Auth.jsの公式ドキュメント](https://authjs.dev/)をぜひ参照してください。
+「あしたぼホームページ」の認証機能は、これらの仕組みを基盤として構築されています。ドキュメントと実際のコードを見比べながら、理解を深めていきましょう。

@@ -31,53 +31,7 @@ TypeScriptで書かれたコードは、最終的にはJavaScriptに変換（コ
 
 TypeScriptには、様々な種類のデータを表現するための基本的な型が用意されています。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">基本的な型</Fragment>
-  <Fragment slot="tab-1-content">
-    ```ts
-    // 文字列型 (string)
-    let userName: string = "あしたぼ太郎";
-    // userName = 123; // エラー！ 文字列型に数字は代入できない
-
-    // 数値型 (number)
-    let age: number = 20;
-    // age = "20歳"; // エラー！
-
-    // 真偽値型 (boolean)
-    let isActive: boolean = true;
-    // isActive = "yes"; // エラー！
-
-    // 配列型 (要素の型[])
-    let hobbies: string[] = ["読書", "映画鑑賞"];
-    let scores: Array<number> = [80, 95, 72]; // Array<要素の型> という書き方もできる
-
-    // オブジェクト型 (具体的な形は後述)
-    let userProfile: object = { name: "花子", age: 25 };
-
-    // any型 (どんな型でもOK、でも非推奨！)
-    let anything: any = "なんでも入る";
-    anything = 100;
-    anything = false; // エラーにならないが、型の恩恵を受けられない
-
-    // null と undefined
-    let noValue: null = null;
-    let notAssigned: undefined = undefined;
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">解説</Fragment>
-  <Fragment slot="tab-2-content">
-    <ul>
-      <li><code>string</code>: 文字列を表します。ダブルクォート(<code>"</code>)またはシングルクォート(<code>'</code>)で囲みます。</li>
-      <li><code>number</code>: 整数や小数を表します。</li>
-      <li><code>boolean</code>: <code>true</code> (真) または <code>false</code> (偽) のどちらかの値を表します。</li>
-      <li><code>string[]</code> や <code>Array</code>: 同じ型の要素が複数集まった配列を表します。</li>
-      <li><code>object</code>: オブジェクトを表しますが、これだけだと中身の形が分からないので、通常はもっと具体的に型定義します。</li>
-      <li><code>any</code>: どんな型でも許容しますが、TypeScriptの型チェックを無効にしてしまうため、極力使わないようにしましょう。</li>
-      <li><code>null</code>: 「値がない」ことを意図的に示す値です。</li>
-      <li><code>undefined</code>: 「まだ値が代入されていない」状態を示します。</li>
-    </ul>
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/typescript/BasicTypes.ts" />
 
 ### 型推論
 
@@ -92,61 +46,7 @@ let message = "こんにちは！"; // message は string型だと推論され�
 
 複数のデータをまとめて扱うオブジェクトの「形」を定義するには、`type`エイリアスまたは`interface`を使います。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">typeエイリアス</Fragment>
-  <Fragment slot="tab-1-content">
-    ```ts
-    // Userという名前の型を定義
-    type User = {
-      id: number;
-      name: string;
-      email?: string; // '?' を付けるとオプショナル（あってもなくても良い）プロパティになる
-      isAdmin: boolean;
-      registerDate: Date;
-    };
-
-    const user1: User = {
-      id: 1,
-      name: "山田さん",
-      isAdmin: false,
-      registerDate: new Date("2023-01-15"),
-    };
-
-    // user1.email は undefined
-
-    const user2: User = {
-      id: 2,
-      name: "鈴木さん",
-      email: "suzuki@example.com",
-      isAdmin: true,
-      registerDate: new Date("2023-02-20"),
-    };
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">interface</Fragment>
-  <Fragment slot="tab-2-content">
-    ```ts
-    // Articleという名前のインターフェースを定義
-    interface Article {
-      title: string;
-      content: string;
-      readonly authorId: number; // readonly を付けると変更不可になる
-      tags?: string[];
-      publicationDate: Date;
-    }
-
-    const myArticle: Article = {
-      title: "TypeScript入門",
-      content: "TypeScriptは素晴らしい...",
-      authorId: 101,
-      tags: ["プログラミング", "TypeScript"],
-      publicationDate: new Date(),
-    };
-
-    // myArticle.authorId = 102; // エラー！ readonlyプロパティは変更できない
-    ```
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/typescript/ObjectTypeDefinitions.ts" />
 
 **`type` と `interface` の使い分け:**
 - どちらもオブジェクトの形を定義できますが、`interface` はクラスに実装(implements)させたり、同名の`interface`を宣言してプロパティを拡張（マージ）できたりする特徴があります。

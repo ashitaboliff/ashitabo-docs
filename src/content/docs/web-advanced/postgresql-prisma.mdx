@@ -146,93 +146,63 @@ if (process.env.NODE_ENV === 'production') {
 export default prisma;
 ```
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">データ作成 (Create)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```ts
-  // pages/api/users.ts (Next.js APIルートの例)
-  import prisma from '@/lib/prisma';
+<CodePreviewTabs filePath="src/components/code_examples/prisma/createUserAndPosts.ts" />
 
-  async function createUser() {
-    const newUser = await prisma.user.create({
-      data: {
-        email: 'alice@example.com',
-        name: 'Alice',
-        posts: {
-          create: [
-            { title: '初めての投稿', content: 'こんにちは！' },
-            { title: 'Prismaは便利', published: true },
-          ],
-        },
-      },
-      include: { // 作成と同時にリレーション先のデータも取得
-        posts: true,
-      },
-    });
-    console.log(newUser);
-  }
-  ```
-  </Fragment>
-  <Fragment slot="tab-2-label">データ取得 (Read)</Fragment>
-  <Fragment slot="tab-2-content">
-  ```ts
-  import prisma from '@/lib/prisma';
+データ取得 (Read) の例:
+```ts
+import prisma from '@/lib/prisma';
 
-  async function getUsers() {
-    // 全ユーザー取得
-    const allUsers = await prisma.user.findMany({
-      include: { posts: true }, // 関連するPostも取得
-    });
+async function getUsers() {
+  // 全ユーザー取得
+  const allUsers = await prisma.user.findMany({
+    include: { posts: true }, // 関連するPostも取得
+  });
 
-    // 特定のユーザー取得 (emailで検索)
-    const specificUser = await prisma.user.findUnique({
-      where: { email: 'alice@example.com' },
-    });
+  // 特定のユーザー取得 (emailで検索)
+  const specificUser = await prisma.user.findUnique({
+    where: { email: 'alice@example.com' },
+  });
 
-    // 条件に一致するPostを検索
-    const publishedPosts = await prisma.post.findMany({
-      where: { published: true },
-      orderBy: { createdAt: 'desc' }, // 作成日時の降順
-      take: 10, // 最大10件
-    });
-  }
-  ```
-  </Fragment>
-  <Fragment slot="tab-3-label">データ更新 (Update)</Fragment>
-  <Fragment slot="tab-3-content">
-  ```ts
-  import prisma from '@/lib/prisma';
+  // 条件に一致するPostを検索
+  const publishedPosts = await prisma.post.findMany({
+    where: { published: true },
+    orderBy: { createdAt: 'desc' }, // 作成日時の降順
+    take: 10, // 最大10件
+  });
+}
+```
 
-  async function updateUser(userId: number) {
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { name: 'Alice Wonderland' },
-    });
-  }
+データ更新 (Update) の例:
+```ts
+import prisma from '@/lib/prisma';
 
-  async function publishPost(postId: number) {
-    const updatedPost = await prisma.post.update({
-      where: { id: postId },
-      data: { published: true },
-    });
-  }
-  ```
-  </Fragment>
-  <Fragment slot="tab-4-label">データ削除 (Delete)</Fragment>
-  <Fragment slot="tab-4-content">
-  ```ts
-  import prisma from '@/lib/prisma';
+async function updateUser(userId: number) {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { name: 'Alice Wonderland' },
+  });
+}
 
-  async function deleteUser(userId: number) {
-    // 関連するPostも一緒に削除する場合 (スキーマでカスケード削除設定が必要な場合もある)
-    // await prisma.post.deleteMany({ where: { authorId: userId } });
-    const deletedUser = await prisma.user.delete({
-      where: { id: userId },
-    });
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
+async function publishPost(postId: number) {
+  const updatedPost = await prisma.post.update({
+    where: { id: postId },
+    data: { published: true },
+  });
+}
+```
+
+データ削除 (Delete) の例:
+```ts
+import prisma from '@/lib/prisma';
+
+async function deleteUser(userId: number) {
+  // 関連するPostも一緒に削除する場合 (スキーマでカスケード削除設定が必要な場合もある)
+  // await prisma.post.deleteMany({ where: { authorId: userId } });
+  const deletedUser = await prisma.user.delete({
+    where: { id: userId },
+  });
+}
+```
 
 ## Prisma Studio: GUIでデータを見る
 

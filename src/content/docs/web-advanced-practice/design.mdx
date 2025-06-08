@@ -42,52 +42,41 @@ import CodePreviewTabs from '../../../components/CodePreviewTabs.astro';
 -   **CSS (任意)**:
     -   複雑な下線アニメーションなどは、Tailwindだけでは難しい場合、カスタムCSSで `::after` 擬似要素などを使うことも検討できます。その場合、Tailwindの `@apply` を使って既存のユーティリティを組み合わせることも可能です。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">NavLink.tsx (改善例の骨子)</Fragment>
-  <Fragment slot="tab-1-content">
-  ```tsx
-  'use client'; // usePathname を使うため
-  import Link from 'next/link';
-  import { usePathname } from 'next/navigation';
+<CodePreviewTabs filePath="src/components/code_examples/tsx/AdvancedNavLink.tsx" />
 
-  type NavLinkProps = {
-    href: string;
-    children: React.ReactNode;
-  };
+## CHALLENGE 2: Tailwind CSSプラグインでカスタムユーティリティを作成
 
-  export default function NavLink({ href, children }: NavLinkProps) {
-    const pathname = usePathname();
-    const isActive = pathname === href || (href !== '/' && pathname.startsWith(href));
+プロジェクトで頻繁に使う特定のスタイル組み合わせや、Tailwindだけでは表現しにくいスタイルを、カスタムプラグインとして作成してみましょう。
 
-    return (
-      <Link
-        href={href}
-        className={`
-          px-3 py-2 rounded-md text-sm font-medium transition-all duration-150 ease-in-out
-          group
-          ${
-            isActive
-              ? 'bg-sky-700 text-white shadow-inner' // アクティブ時のスタイル
-              : 'text-gray-300 hover:bg-gray-700 hover:text-white focus:bg-gray-700 focus:text-white focus:outline-none'
-          }
-        `}
-        aria-current={isActive ? 'page' : undefined}
-      >
-        {children}
-        <span
-          className={`
-            block max-w-0 group-hover:max-w-full transition-all duration-300 h-0.5
-            ${isActive ? 'bg-yellow-400 max-w-full' : 'bg-sky-500'}
-          `}
-        ></span> {/* ホバー/アクティブ時の下線アニメーション例 */}
-      </Link>
-    );
-  }
-  ```
-  </Fragment>
-</CodePreviewTabs>
+### お題例: テキストにグラデーションをかけるユーティリティ
 
-## CHALLENGE 2: フォームのアクセシビリティ改善
+`text-gradient-to-r from-purple-400 via-pink-500 to-red-500` のようなクラスで、テキストにグラデーションを適用できるユーティリティを作成します。
+
+### 実装のヒント
+
+-   `tailwind.config.ts` の `plugins` 配列に関数を追加します。
+-   プラグイン関数内で `addUtilities` ヘルパーを使います。
+-   生成するCSSは以下のようになるイメージです。
+    ```css
+    .text-gradient-to-r {
+      background-image: linear-gradient(to right, var(--tw-gradient-stops));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    ```
+-   `theme('colors')` を使って、設定ファイル内の色を参照できるようにすると、`from-`, `via-`, `to-` の各色を動的に指定できるようになります（より高度なプラグイン作成）。
+
+<CodePreviewTabs filePath="src/components/code_examples/tailwindcss/CustomPluginExample.js" />
+
+HTMLでの使用例:
+```html
+<h1 class="text-4xl font-bold text-gradient-purple-pink-red">
+  グラデーションテキスト！
+</h1>
+```
+
+## CHALLENGE 3: アクセシビリティ監査と改善
 
 「あしたぼホームページ」内にある任意のフォーム（例: お問い合わせフォーム、[応用フルスタック開発](/web-advanced-practice/fullstack)で作成したコメント投稿フォームなど）のアクセシビリティを向上させましょう。
 

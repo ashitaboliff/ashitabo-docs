@@ -74,6 +74,55 @@ ReactがUI部品を作るのに特化しているのに対し、Next.jsはルー
 
 {/* ここに「App Routerのディレクトリ構造とURLのマッピングを示す図」を挿入 */}
 
+### プロジェクト構成の考え方: Package by Feature
+
+「あしたぼホームページ」のようなある程度規模のあるプロジェクトでは、関連するコードを機能（feature）ごとにまとめて管理する「Package by Feature」というアプローチが採られることがあります。これは、Next.jsのApp Routerのファイルベースルーティングと組み合わせて使うことができます。
+
+**基本的な考え方:**
+-   プロジェクトの `src` ディレクトリ直下に `features` というディレクトリを作成します。
+-   各機能（例: `booking`（予約機能）、`user`（ユーザー関連機能）、`announcement`（お知らせ機能））ごとに、`src/features/` 以下に専用のディレクトリを作成します (例: `src/features/booking/`)。
+-   各featureディレクトリ内には、その機能に関連するコンポーネント、APIロジック、型定義、データベース操作関数（リポジトリ層）、さらにはその機能専用のページルート（App Routerの規約に従った `app/` ディレクトリ構造）などをまとめて配置します。
+
+**ディレクトリ構造の例 (`booking` feature):**
+```
+src/
+├── app/                 # Next.jsのApp Routerのルート
+│   └── (booking)/       # ルートグループを使ってURLに影響を与えずに整理
+│       └── booking/
+│           ├── page.tsx     # /booking ページのUI (features/booking/app/page.tsx からインポートまたは再エクスポート)
+│           └── ...
+├── features/
+│   └── booking/
+│       ├── app/             # このfeatureに関連するページコンポーネント
+│       │   └── page.tsx     # 予約ページのメインUI (例: /booking)
+│       │   └── (detail)/
+│       │       └── [id]/
+│       │           └── page.tsx # 予約詳細ページのUI (例: /booking/123)
+│       ├── components/      # 予約機能で使われるReactコンポーネント
+│       │   ├── BookingForm.tsx
+│       │   └── BookingCalendar.tsx
+│       ├── lib/             # 予約機能のコアロジック、型定義、リポジトリ
+│       │   ├── actions.ts   # サーバーアクション (データ作成・更新・削除など)
+│       │   ├── repository.ts# Prismaを使ったデータベース操作関数
+│       │   └── types.ts     # 予約機能に関連する型定義 (Booking型など)
+│       └── ...
+├── components/          # プロジェクト全体で共通のUIコンポーネント
+├── lib/                 # プロジェクト全体で共通のライブラリ、ヘルパー関数
+└── ...
+```
+
+**利点:**
+-   **関心の分離**: 機能ごとに関連ファイルがまとまるため、コードの見通しが良くなり、どこに何があるか把握しやすくなります。
+-   **凝集度の向上**: ある機能に関する変更は、そのfeatureディレクトリ内で完結しやすくなり、他の機能への影響を抑えられます。
+-   **再利用性と独立性**: 各featureがある程度独立しているため、将来的に別のプロジェクトで再利用したり、一部の機能を切り出したりしやすくなります。
+
+**App Routerとの連携:**
+-   `src/features/featureName/app/` 内にApp Routerの規約（`page.tsx`, `layout.tsx`など）に従ってページコンポーネントを作成します。
+-   これらのページコンポーネントを、メインの `src/app/` ディレクトリからインポートして再エクスポートするか、あるいは `src/app/` 内にfeatureごとのルートグループ `(featureName)` を作成し、その中で `src/features/featureName/app/` の内容を参照するように構成します。
+-   これにより、Next.jsのファイルベースルーティングの恩恵を受けつつ、コードの物理的な配置は機能ごとに整理できます。
+
+「あしたぼホームページ」では、この「Package by Feature」の考え方を採用し、各機能（予約、認証、お知らせなど）がそれぞれのディレクトリで管理されています。開発を進める際には、まずどの機能に関連する作業なのかを意識し、対応するfeatureディレクトリ内のコードを編集していくことになります。
+
 ### 動的ルーティング
 
 URLの一部が可変になるページ（例: ブログ記事の詳細ページ `/blog/[slug]` やユーザープロフィールページ `/users/[id]`）も簡単に作れます。
@@ -119,53 +168,25 @@ App Routerでは、コンポーネントはデフォルトで**サーバーコ�
 一方、ユーザーの操作に反応したり（`onClick`など）、状態を保持したり（`useState`）、ブラウザのAPIを使ったりするコンポーネントは、**クライアントコンポーネント**として定義する必要があります。
 クライアントコンポーネントにするには、ファイルの先頭に `'use client';` という記述を追加します。
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">サーバーコンポーネント (例)</Fragment>
-  <Fragment slot="tab-1-content">
-    ```tsx
-    // src/app/my-server-page/page.tsx
-    // (デフォルトでサーバーコンポーネント)
+<CodePreviewTabs filePath="src/components/code_examples/nextjs/ServerComponentExample.tsx" />
 
-    async function fetchData() {
-      const res = await fetch('https://api.example.com/data', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to fetch');
-      return res.json();
-    }
+クライアントコンポーネントの例 (`src/components/InteractiveButton.tsx`):
+```tsx
+// src/components/InteractiveButton.tsx
+'use client'; // クライアントコンポーネント宣言
 
-    export default async function MyServerPage() {
-      const data = await fetchData(); // サーバーサイドでデータを取得
+import { useState } from 'react';
 
-      return (
-        <div>
-          <h1>サーバーから取得したデータ</h1>
-          <pre>{JSON.stringify(data, null, 2)}</pre>
-          {/* ここにクライアントコンポーネントを配置することも可能 */}
-          {/* <InteractiveButton /> */}
-        </div>
-      );
-    }
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">クライアントコンポーネント (例)</Fragment>
-  <Fragment slot="tab-2-content">
-    ```tsx
-    // src/components/InteractiveButton.tsx
-    'use client'; // クライアントコンポーネント宣言
+export default function InteractiveButton() {
+  const [count, setCount] = useState(0);
 
-    import { useState } from 'react';
-
-    export default function InteractiveButton() {
-      const [count, setCount] = useState(0);
-
-      return (
-        <button onClick={() => setCount(count + 1)}>
-          クリック回数: {count}
-        </button>
-      );
-    }
-    ```
-  </Fragment>
-</CodePreviewTabs>
+  return (
+    <button onClick={() => setCount(count + 1)} className="btn btn-accent mt-4">
+      クリック回数: {count}
+    </button>
+  );
+}
+```
 
 <Aside type="tip">
 サーバーコンポーネントとクライアントコンポーネントはうまく使い分けることが重要です。

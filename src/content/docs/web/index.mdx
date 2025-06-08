@@ -1,27 +1,27 @@
 ---
 title: Web開発の基礎（座学編）
 description: WebサイトやWebアプリケーションがどのように作られているのか、その基本的な仕組みと主要な技術について学びます。
-template: splash
-# hero:
-#   title: Web開発の基礎を学ぼう！
-#   tagline: プログラミングの世界へようこそ。ここでは、あしたぼホームページを支える技術の「なぜ？」と「なに？」をやさしく解説します。
-#   image:
-#     # file: ../../assets/web-hero.png # 適切なヒーロー画像を後で設定
-#     # alt: Web開発の概念図
-#   actions:
-#     - text: TypeScriptの基礎から
-#       link: /web/typescript
-#       icon: external
-#       variant: primary
-#     - text: Reactの基礎へ
-#       link: /web/react
-#       icon: external
-#     - text: Next.jsの基礎へ
-#       link: /web/nextjs
-#       icon: external
-#     - text: Tailwind CSSの基礎へ
-#       link: /web/tailwind
-#       icon: external
+# template: splash
+hero:
+  title: Web開発の基礎を学ぼう！
+  tagline: プログラミングの世界へようこそ。ここでは、あしたぼホームページを支える技術の「なぜ？」と「なに？」をやさしく解説します。
+  # image:
+  #   # file: ../../assets/web-hero.png # 適切なヒーロー画像を後で設定
+  #   # alt: Web開発の概念図
+  actions:
+    - text: TypeScriptの基礎から
+      link: /web/typescript
+      icon: external
+      variant: primary
+    - text: Reactの基礎へ
+      link: /web/react
+      icon: external
+    - text: Next.jsの基礎へ
+      link: /web/nextjs
+      icon: external
+    - text: Tailwind CSSの基礎へ
+      link: /web/tailwind
+      icon: external
 ---
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
@@ -48,21 +48,9 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 `src/components/CodePreviewTabs.astro` コンポーネントを使って、コードとその実行結果（または見た目のプレビュー）をタブで切り替えて確認できるようにする予定です。
 
 {/*
-import CodePreviewTabs from '../../components/CodePreviewTabs.astro';
+import CodePreviewTabs from '../../../components/CodePreviewTabs.astro'; // パスを修正
 
-<CodePreviewTabs>
-  <Fragment slot="tab-1-label">TypeScriptの例</Fragment>
-  <Fragment slot="tab-1-content">
-    ```ts
-    const message: string = 'Hello, World!';
-    console.log(message);
-    ```
-  </Fragment>
-  <Fragment slot="tab-2-label">プレビュー</Fragment>
-  <Fragment slot="tab-2-content">
-    <div>Hello, World! (コンソールに出力されます)</div>
-  </Fragment>
-</CodePreviewTabs>
+<CodePreviewTabs filePath="src/components/code_examples/typescript/HelloWorld.ts" />
 */}
 
 焦らず、自分のペースで一つずつ理解を深めていきましょう。
